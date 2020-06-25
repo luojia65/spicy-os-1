@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "spicy-os",
+    "opensbi-rt"
+]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
