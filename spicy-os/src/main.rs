@@ -2,6 +2,7 @@
 #![no_main]
 #![feature(global_asm, llvm_asm)]
 
+use opensbi_rt::{entry, interrupt};
 use opensbi_rt::println;
 use opensbi_rt::sbi;
 use opensbi_rt::trap::TrapFrame;
@@ -9,7 +10,7 @@ use riscv::register::{scause::Scause, sie, sstatus, time};
 
 static INTERVAL: u64 = 100000;
 
-#[opensbi_rt::entry]
+#[entry]
 fn main(hartid: usize, dtb: usize) {
     println!("Hello, OpenSBI!");
     println!("hartid={}, dtb={:#x}", hartid, dtb);
@@ -34,7 +35,7 @@ fn main(hartid: usize, dtb: usize) {
     loop {}
 }
 
-#[opensbi_rt::interrupt]
+#[interrupt]
 fn SupervisorTimer() {
     static mut TICKS: usize = 0;
     sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
