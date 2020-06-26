@@ -2,9 +2,9 @@
 #![no_main]
 #![feature(global_asm, llvm_asm)]
 
+use opensbi_rt::interrupt::TrapFrame;
 use opensbi_rt::println;
 use opensbi_rt::sbi;
-use opensbi_rt::interrupt::TrapFrame;
 use riscv::register::scause::Scause;
 
 #[opensbi_rt::entry]
@@ -25,6 +25,8 @@ fn main(hartid: usize, dtb: usize) {
 #[export_name = "ExceptionHandler"]
 pub fn handle_exception(_trap_frame: &TrapFrame, scause: Scause, stval: usize) {
     panic!(
-        "Exception occurred: {:?}; stval: 0x{:x}", scause.cause(), stval
+        "Exception occurred: {:?}; stval: 0x{:x}",
+        scause.cause(),
+        stval
     );
 }
