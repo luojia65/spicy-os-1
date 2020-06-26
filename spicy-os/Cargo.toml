@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 opensbi-rt = { version = "*", path = "../opensbi-rt" }
+riscv = "0.6"
