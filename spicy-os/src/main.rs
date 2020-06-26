@@ -4,7 +4,8 @@
 
 use opensbi_rt::println;
 use opensbi_rt::sbi;
-use riscv::register::{sie, sstatus, time};
+use opensbi_rt::trap::TrapFrame;
+use riscv::register::{scause::Scause, sie, sstatus, time};
 
 static INTERVAL: u64 = 100000;
 
@@ -18,15 +19,18 @@ fn main(hartid: usize, dtb: usize) {
     println!("mvendorid    = {:?}", sbi::base::get_mvendorid());
     println!("marchid      = {:?}", sbi::base::get_marchid());
     println!("mimpid       = {:?}", sbi::base::get_mimpid());
-    
+
     unsafe {
         // 开启 STIE，允许时钟中断
-        sie::set_stimer(); 
+        sie::set_stimer();
         // 开启 SIE（不是 sie 寄存器），允许内核态被中断打断
         sstatus::set_sie();
     }
     // 设置下一次时钟中断
     sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
+    unsafe {
+        llvm_asm!("ebreak"::::"volatile");
+    }
     loop {}
 }
 
@@ -41,4 +45,18 @@ fn on_timer() {
             println!("100 ticks~");
         }
     };
+}
+
+#[export_name = "ExceptionHandler"]
+pub fn handle_exception(trap_frame: &mut TrapFrame, scause: Scause, stval: usize) {
+    println!(
+        "Exception occurred: {:?}; stval: 0x{:x}",
+        scause.cause(),
+        stval
+    );
+    use riscv::register::scause::{Exception, Trap};
+    if scause.cause() == Trap::Exception(Exception::Breakpoint) {
+        println!("Breakpoint at 0x{:x}", trap_frame.sepc);
+        trap_frame.sepc += 2;
+    }
 }
