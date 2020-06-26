@@ -1,7 +1,8 @@
 [workspace]
 members = [
     "spicy-os",
-    "opensbi-rt"
+    "opensbi-rt",
+    "opensbi-rt/example"
 ]
 
 [profile.dev]
