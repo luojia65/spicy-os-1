@@ -34,17 +34,14 @@ fn main(hartid: usize, dtb: usize) {
     loop {}
 }
 
-pub static mut TICKS: usize = 0;
-
-#[export_name = "SupervisorTimer"]
-fn on_timer() {
+#[opensbi_rt::interrupt]
+fn SupervisorTimer() {
+    static mut TICKS: usize = 0;
     sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
-    unsafe {
-        TICKS += 1;
-        if TICKS % 100 == 0 {
-            println!("100 ticks~");
-        }
-    };
+    *TICKS += 1;
+    if *TICKS % 100 == 0 {
+        println!("100 ticks~");
+    }
 }
 
 #[export_name = "ExceptionHandler"]
