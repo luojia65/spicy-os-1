@@ -2,10 +2,11 @@
 #![no_main]
 #![feature(global_asm, llvm_asm)]
 
-use opensbi_rt::interrupt::TrapFrame;
 use opensbi_rt::println;
 use opensbi_rt::sbi;
-use riscv::register::scause::Scause;
+use riscv::register::{sie, sstatus, time};
+
+static INTERVAL: u64 = 100000;
 
 #[opensbi_rt::entry]
 fn main(hartid: usize, dtb: usize) {
@@ -17,16 +18,27 @@ fn main(hartid: usize, dtb: usize) {
     println!("mvendorid    = {:?}", sbi::base::get_mvendorid());
     println!("marchid      = {:?}", sbi::base::get_marchid());
     println!("mimpid       = {:?}", sbi::base::get_mimpid());
+    
     unsafe {
-        llvm_asm!("ebreak"::::"volatile");
-    };
+        // 开启 STIE，允许时钟中断
+        sie::set_stimer(); 
+        // 开启 SIE（不是 sie 寄存器），允许内核态被中断打断
+        sstatus::set_sie();
+    }
+    // 设置下一次时钟中断
+    sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
+    loop {}
 }
 
-#[export_name = "ExceptionHandler"]
-pub fn handle_exception(_trap_frame: &TrapFrame, scause: Scause, stval: usize) {
-    panic!(
-        "Exception occurred: {:?}; stval: 0x{:x}",
-        scause.cause(),
-        stval
-    );
+pub static mut TICKS: usize = 0;
+
+#[export_name = "SupervisorTimer"]
+fn on_timer() {
+    sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
+    unsafe {
+        TICKS += 1;
+        if TICKS % 100 == 0 {
+            println!("100 ticks~");
+        }
+    };
 }
