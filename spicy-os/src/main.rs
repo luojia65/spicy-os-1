@@ -2,11 +2,9 @@
 #![no_main]
 #![feature(global_asm, llvm_asm)]
 
-use opensbi_rt::{entry, interrupt};
-use opensbi_rt::println;
-use opensbi_rt::sbi;
-use opensbi_rt::trap::TrapFrame;
 use riscv::register::{scause::Scause, sie, sstatus, time};
+use riscv_sbi::{self as sbi, println};
+use riscv_sbi_rt::{entry, interrupt, TrapFrame};
 
 static INTERVAL: u64 = 100000;
 

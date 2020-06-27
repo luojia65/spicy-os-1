@@ -1,8 +1,8 @@
 [workspace]
 members = [
     "spicy-os",
-    "opensbi-rt",
-    "opensbi-rt/example"
+    "riscv-sbi",
+    "riscv-sbi-rt",
 ]
 
 [profile.dev]
@@ -10,3 +10,6 @@ panic = "abort"
 
 [profile.release]
 panic = "abort"
+
+[patch.crates-io]
+riscv-sbi = { path = "riscv-sbi" }
