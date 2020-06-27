@@ -13,3 +13,4 @@ panic = "abort"
 
 [patch.crates-io]
 riscv-sbi = { path = "riscv-sbi" }
+riscv-sbi-rt = { path = "riscv-sbi-rt" }
