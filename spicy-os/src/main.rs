@@ -4,9 +4,14 @@
 
 use riscv::register::{scause::Scause, sie, sstatus, time};
 use riscv_sbi::{self as sbi, println};
-use riscv_sbi_rt::{entry, interrupt, TrapFrame};
+use riscv_sbi_rt::{entry, interrupt, pre_init, TrapFrame};
 
-static INTERVAL: u64 = 100000;
+const INTERVAL: u64 = 100000;
+
+#[pre_init]
+unsafe fn pre_init() {
+    println!("PreInit!")
+}
 
 #[entry]
 fn main(hartid: usize, dtb: usize) {

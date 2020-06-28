@@ -17,6 +17,10 @@ qemu: build
             -machine virt \
             -nographic \
             -bios default \
-            -device loader,file={{bin_file}},addr=0x80200000
+            -device loader,file={{bin_file}},addr=0x80200000 \
+            -smp threads=2
 
 run: build qemu
+
+asm: build
+    @{{objdump}} -D {{kernel_file}} | less
