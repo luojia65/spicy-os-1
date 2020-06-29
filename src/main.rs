@@ -10,16 +10,6 @@ const INTERVAL: u64 = 100000;
 
 #[pre_init]
 unsafe fn pre_init() {
-    extern "Rust" {
-        static _sheap: u64;
-        static _eheap: u64;
-        static _sstack: u64;
-        static _estack: u64;
-    }
-    println!("heap size: {} bytes", 
-        &_eheap as *const u64 as usize - &_sheap as *const u64 as usize);
-    println!("stack size: {} bytes", 
-        &_sstack as *const u64 as usize - &_estack as *const u64 as usize);
     println!("PreInit!")
 }
 
