@@ -13,6 +13,8 @@ unsafe fn pre_init() {
     println!("PreInit!")
 }
 
+extern crate alloc;
+
 #[entry]
 fn main(hartid: usize, dtb: usize) {
     println!("Hello, OpenSBI!");
@@ -23,6 +25,19 @@ fn main(hartid: usize, dtb: usize) {
     println!("mvendorid    = {:?}", sbi::base::get_mvendorid());
     println!("marchid      = {:?}", sbi::base::get_marchid());
     println!("mimpid       = {:?}", sbi::base::get_mimpid());
+    
+    use alloc::boxed::Box;
+    use alloc::vec::Vec;
+    let v = Box::new(5);
+    assert_eq!(*v, 5);
+    let mut vec = Vec::new();
+    for i in 0..10000 {
+        vec.push(i);
+    }
+    for i in 0..10000 {
+        assert_eq!(vec[i], i);
+    }
+    println!("heap test passed");
     
     unsafe {
         // 开启 STIE，允许时钟中断
