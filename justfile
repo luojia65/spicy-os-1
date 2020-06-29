@@ -5,6 +5,7 @@ bin_file := "target/" + target + "/" + mode + "/kernel.bin"
 
 objdump := "rust-objdump --arch-name=riscv64"
 objcopy := "rust-objcopy --binary-architecture=riscv64"
+size := "rust-size"
 
 build: kernel
     @{{objcopy}} {{kernel_file}} --strip-all -O binary {{bin_file}}
@@ -24,3 +25,6 @@ run: build qemu
 
 asm: build
     @{{objdump}} -D {{kernel_file}} | less
+
+size: build
+    @{{size}} -A -x {{kernel_file}}
