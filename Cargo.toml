@@ -10,3 +10,10 @@ edition = "2018"
 riscv-sbi-rt = { version = "*", path = "../riscv-sbi-rt" }
 riscv-sbi = { version = "*", path = "../riscv-sbi" }
 riscv = "0.6"
+
+[dependencies.lazy_static]
+version = "1"
+features = ["spin_no_std"]
+
+[dependencies.spin]
+version = "*"
