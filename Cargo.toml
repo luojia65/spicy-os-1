@@ -1,16 +1,12 @@
-[workspace]
-members = [
-    "spicy-os",
-    "riscv-sbi",
-    "riscv-sbi-rt",
-]
+[package]
+name = "spicy-os"
+version = "0.1.0"
+authors = ["luojia65 <me@luojia.cc>"]
+edition = "2018"
 
-[profile.dev]
-panic = "abort"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[profile.release]
-panic = "abort"
-
-[patch.crates-io]
-riscv-sbi = { path = "riscv-sbi" }
-riscv-sbi-rt = { path = "riscv-sbi-rt" }
+[dependencies]
+riscv-sbi-rt = { version = "*", path = "../riscv-sbi-rt" }
+riscv-sbi = { version = "*", path = "../riscv-sbi" }
+riscv = "0.6"
