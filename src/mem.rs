@@ -3,26 +3,22 @@ use core::ops::{Add, AddAssign};
 use lazy_static::lazy_static;
 use spin::Mutex;
 
-lazy_static! {
-    pub static ref KERNEL_END_ADDRESS: PhysicalAddress =
-        PhysicalAddress(unsafe { &supervisor_end as *const _ as usize });
+extern "Rust" {
+    static _sframe: u8;
+    static _eframe: u8;
 }
 
 /// 页 / 帧大小，必须是 2^n
 pub const PAGE_SIZE: usize = 4096;
 
-/// 可以访问的内存区域起始地址
-pub const MEMORY_START_ADDRESS: PhysicalAddress = PhysicalAddress(0x8000_0000);
-/// 可以访问的内存区域结束地址
-pub const MEMORY_END_ADDRESS: PhysicalAddress = PhysicalAddress(0x8800_0000);
-
-extern "Rust" {
-    /// 由 `linker.ld` 指定的内核代码结束位置
-    ///
-    /// 作为变量存在 [`KERNEL_END_ADDRESS`]
-    static supervisor_end: u8;
+lazy_static! {
+    /// 可以访问的内存区域起始地址
+    pub static ref MEMORY_START_ADDRESS: PhysicalAddress = 
+        PhysicalAddress(unsafe { &_sframe as *const _ as usize });
+    /// 可以访问的内存区域结束地址
+    pub static ref MEMORY_END_ADDRESS: PhysicalAddress = 
+        PhysicalAddress(unsafe { &_eframe as *const _ as usize });
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct PhysicalAddress(usize);
 
@@ -98,8 +94,8 @@ lazy_static! {
         FrameAllocator<StackedAllocator>
     > = Mutex::new(FrameAllocator::new(
         Range::from(
-            Ppn::ceil(PhysicalAddress::from(*KERNEL_END_ADDRESS))
-            ..Ppn::floor(MEMORY_END_ADDRESS)
+            Ppn::ceil(*MEMORY_START_ADDRESS)
+            ..Ppn::floor(*MEMORY_END_ADDRESS)
         )
     ));
 }

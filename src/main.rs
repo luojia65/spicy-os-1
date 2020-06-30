@@ -83,7 +83,8 @@ fn main(hartid: usize, dtb: usize) {
     }
     println!("heap test passed");
 
-    println!("{:?}", *mem::KERNEL_END_ADDRESS);
+    println!("frame start: {:?}", *mem::MEMORY_START_ADDRESS);
+    println!("frame end: {:?}", *mem::MEMORY_END_ADDRESS);
 
     // 物理页分配
     for _ in 0..2 {
