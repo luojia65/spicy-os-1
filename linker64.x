@@ -8,7 +8,7 @@ PROVIDE(_stext = 0x80200000);
 /* 如果要扩栈就改这个数 */
 PROVIDE(_hart_stack_size = 128K);
 /* 加核心的时候同时需要改这个数 */
-PROVIDE(_max_hart_id = 8);
+PROVIDE(_max_hart_id = 4);
 
 REGION_ALIAS("REGION_TEXT", DRAM);
 REGION_ALIAS("REGION_RODATA", DRAM);

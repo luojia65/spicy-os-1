@@ -19,7 +19,7 @@ qemu: build
             -nographic \
             -bios default \
             -device loader,file={{bin_file}},addr=0x80200000 \
-            -smp threads=8
+            -smp threads=4
 
 run: build qemu
 

@@ -5,9 +5,17 @@
 
 mod mem;
 
-use riscv::register::{scause::Scause, sie, sstatus, time};
+use riscv::register::{scause::Scause, sie, sip, sstatus, time};
 use riscv_sbi::{self as sbi, println};
 use riscv_sbi_rt::{entry, interrupt, pre_init, TrapFrame};
+
+use linked_list_allocator::LockedHeap;
+#[global_allocator]
+static HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
+
+const HEAP_SIZE: usize = 0x100_0000;
+
+static mut HEAP: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
 
 const INTERVAL: u64 = 100000;
 
@@ -17,6 +25,27 @@ unsafe fn pre_init() {
 }
 
 extern crate alloc;
+
+#[export_name = "_mp_hook"]
+pub fn mp_hook(hartid: usize, dtb: usize) -> bool {
+    if hartid == 0 {
+        true
+    } else {
+        unsafe {
+            sbi::legacy::clear_ipi();
+            sie::set_ssoft();
+            loop {
+                riscv::asm::wfi();
+                if sip::read().ssoft() {
+                    break;
+                }
+            }
+            sie::clear_ssoft();
+            sbi::legacy::clear_ipi();
+        }
+        false
+    }
+}
 
 #[entry]
 fn main(hartid: usize, dtb: usize) {
@@ -28,6 +57,17 @@ fn main(hartid: usize, dtb: usize) {
     println!("mvendorid    = {:?}", sbi::base::get_mvendorid());
     println!("marchid      = {:?}", sbi::base::get_marchid());
     println!("mimpid       = {:?}", sbi::base::get_mimpid());
+
+    unsafe {
+        HEAP_ALLOCATOR
+            .lock()
+            .init(HEAP.as_ptr() as usize, HEAP_SIZE);
+    }
+
+    // wake other harts
+    // let hart_mask: [usize; 4] = [1, 0, 0, 0];
+    let hart_mask = 0b1110; // todo
+    sbi::legacy::send_ipi(hart_mask);
 
     use alloc::boxed::Box;
     use alloc::vec::Vec;
@@ -79,6 +119,11 @@ fn SupervisorTimer() {
     if *TICKS % 100 == 0 {
         println!("100 ticks~");
     }
+}
+
+#[interrupt]
+fn SupervisorSoft() {
+    println!("SupervisorSoft!");
 }
 
 #[export_name = "ExceptionHandler"]
