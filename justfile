@@ -1,5 +1,5 @@
 target := "riscv64imac-unknown-none-elf"
-mode := "release"
+mode := "debug"
 kernel_file := "target/" + target + "/" + mode + "/spicy-os"
 bin_file := "target/" + target + "/" + mode + "/kernel.bin"
 
@@ -11,7 +11,7 @@ build: kernel
     @{{objcopy}} {{kernel_file}} --strip-all -O binary {{bin_file}}
 
 kernel:
-    @cargo build --target={{target}} --release
+    @cargo build --target={{target}}
     
 qemu: build
     @qemu-system-riscv64 \
@@ -19,7 +19,7 @@ qemu: build
             -nographic \
             -bios default \
             -device loader,file={{bin_file}},addr=0x80200000 \
-            -smp threads=1
+            -smp threads=8
 
 run: build qemu
 
