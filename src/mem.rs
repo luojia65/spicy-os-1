@@ -5,6 +5,7 @@ use bitflags::bitflags;
 use bit_field::BitField;
 use spin::Mutex;
 use riscv_sbi::println;
+use riscv::register::satp;
 
 // todo: on embedded devices, we know how much memory are there on SoC,
 // but on pc or other platforms where we can install external memory,
@@ -229,6 +230,20 @@ impl From<Ppn> for Vpn {
 impl From<Vpn> for Ppn {
     fn from(vpn: Vpn) -> Self {
         Self(vpn.0 - KERNEL_MAP_OFFSET / PAGE_SIZE)
+    }
+}
+
+/// 和 usize 相互转换
+impl From<usize> for VirtualAddress {
+    fn from(value: usize) -> Self {
+        Self(value)
+    }
+}
+
+/// 和 usize 相互转换
+impl From<VirtualAddress> for usize {
+    fn from(value: VirtualAddress) -> Self {
+        value.0
     }
 }
 
@@ -629,5 +644,111 @@ impl Mapping {
             }
             Ok(allocated_pairs)
         }
+    }
+    
+    /// 将当前的映射加载到 `satp` 寄存器
+    pub fn activate(&self) {
+        // satp 低 27 位为页号，高 4 位为模式，8 表示 Sv39
+        let new_satp = self.root_ppn.0 | (8 << 60);
+        unsafe {
+            // 将 new_satp 的值写到 satp 寄存器
+            llvm_asm!("csrw satp, $0" :: "r"(new_satp) :: "volatile");
+            // 刷新 TLB
+            llvm_asm!("sfence.vma" :::: "volatile");
+        }
+    }
+}
+
+/// 一个线程所有关于内存空间管理的信息
+pub struct MemorySet {
+    /// 维护页表和映射关系
+    pub mapping: Mapping,
+    /// 每个字段
+    pub segments: Vec<Segment>,
+}
+
+impl MemorySet {
+    /// 创建内核重映射
+    pub fn new_kernel() -> MemoryResult<MemorySet> {
+        use alloc::boxed::Box;
+        // 在 linker.ld 里面标记的各个字段的起始点，均为 4K 对齐
+        extern "C" {
+            fn _stext();
+            fn _etext();
+            fn _srodata();
+            fn _erodata();
+            fn _sdata();
+            fn _edata();
+            fn _sbss();
+            fn _ebss();
+            fn _sframe();
+            fn _eframe();
+        }
+
+        // 建立字段
+        let segments = vec![
+            // .text 段，r-x
+            Segment {
+                map_type: MapType::Linear,
+                range: Range::<VirtualAddress>::from(
+                    (_stext as usize).into()..(_etext as usize).into(),
+                )
+                .into(),
+                flags: Flags::VALID | Flags::READABLE | Flags::EXECUTABLE,
+            },
+            // .rodata 段，r--
+            Segment {
+                map_type: MapType::Linear,
+                range: Range::<VirtualAddress>::from(
+                    (_srodata as usize).into()..(_erodata as usize).into(),
+                )
+                .into(),
+                flags: Flags::VALID | Flags::READABLE,
+            },
+            // .data 段，rw-
+            Segment {
+                map_type: MapType::Linear,
+                range: Range::<VirtualAddress>::from(
+                    (_sdata as usize).into()..(_edata as usize).into(),
+                )
+                .into(),
+                flags: Flags::VALID | Flags::READABLE | Flags::WRITABLE,
+            },
+            // .bss 段，rw-
+            Segment {
+                map_type: MapType::Linear,
+                range: Range::<VirtualAddress>::from(
+                    (_sbss as usize).into()..(_ebss as usize).into(),
+                ),
+                flags: Flags::VALID | Flags::READABLE | Flags::WRITABLE,
+            },
+            // 剩余内存空间，rw-
+            Segment {
+                map_type: MapType::Linear,
+                range: Range::<VirtualAddress>::from(
+                    (_sframe as usize).into()..(_eframe as usize).into(), // todo
+                ),
+                flags: Flags::VALID | Flags::READABLE | Flags::WRITABLE,
+            },
+        ];
+        let mut mapping = Mapping::new()?;
+        // 准备保存所有新分配的物理页面
+        let mut allocated_pairs: Box<dyn Iterator<Item = (Vpn, FrameTracker)>> =
+            Box::new(core::iter::empty());
+
+        // 每个字段在页表中进行映射
+        for segment in segments.iter() {
+            let new_pairs = mapping.map(segment)?;
+            // 同时将新分配的映射关系保存到 allocated_pairs 中
+            allocated_pairs = Box::new(allocated_pairs.chain(new_pairs.into_iter()));
+        }
+        Ok(MemorySet { mapping, segments })
+    }
+
+    /// 替换 `satp` 以激活页表
+    ///
+    /// 如果当前页表就是自身，则不会替换，但仍然会刷新 TLB。
+    pub fn activate(&self) {
+        self.mapping.activate()
     }
 }
