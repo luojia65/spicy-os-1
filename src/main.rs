@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(global_asm, llvm_asm)]
+#![feature(const_raw_ptr_to_usize_cast)]
 
 mod mem;
 
@@ -55,7 +56,6 @@ fn main(hartid: usize, dtb: usize) {
         };
         println!("{:?} and {:?}", frame_0.address(), frame_1.address());
     }
-
     
     unsafe {
         // 开启 STIE，允许时钟中断

@@ -1,11 +1,9 @@
 use lazy_static::lazy_static;
 use spin::Mutex;
 use core::ops::Range;
+use core::ops::{Add, AddAssign};
 
 lazy_static! {
-    /// 内核代码结束的地址，即可以用来分配的内存起始地址
-    ///
-    /// 因为 Rust 语言限制，我们只能将其作为一个运行时求值的 static 变量，而不能作为 const
     pub static ref KERNEL_END_ADDRESS: PhysicalAddress = 
         PhysicalAddress(unsafe { &supervisor_end as *const _ as usize });
 }
@@ -33,26 +31,53 @@ pub struct PhysicalAddress(usize);
 pub struct Ppn(pub usize);
 
 impl Ppn {
+    // todo: const fn
     /// 将地址转换为页号，向下取整
-    pub const fn floor(address: PhysicalAddress) -> Self {
-        Self(address.0 / PAGE_SIZE)
+    pub fn floor(address: PhysicalAddress) -> Self {
+        let address = address.0 ;
+        Self(address / PAGE_SIZE)
     }
+
     /// 将地址转换为页号，向上取整
-    pub const fn ceil(address: PhysicalAddress) -> Self {
-        Self(address.0 / PAGE_SIZE + (address.0 % PAGE_SIZE != 0) as usize)
+    pub fn ceil(address: PhysicalAddress) -> Self { 
+        let address = address.0;
+        Self(address / PAGE_SIZE + (address % PAGE_SIZE != 0) as usize)
     }
 }
 
-pub struct FrameHandle(PhysicalAddress);
+impl Add for Ppn {
+    type Output = Ppn;
+
+    fn add(self, rhs: Ppn) -> Self::Output {
+        Ppn(self.0 + rhs.0)
+    }
+}
+
+impl Add<usize> for Ppn {
+    type Output = Ppn;
+
+    fn add(self, rhs: usize) -> Self::Output {
+        Ppn(self.0 + rhs)
+    }
+}
+
+impl AddAssign for Ppn {
+    fn add_assign(&mut self, rhs: Ppn) {
+        self.0 += rhs.0
+    }
+}
+
+pub struct FrameHandle(Ppn);
 
 impl FrameHandle {
     /// 帧的物理地址
     pub fn address(&self) -> PhysicalAddress {
-        self.0
+        PhysicalAddress((self.0).0 * PAGE_SIZE)
     }
+
     /// 帧的物理页号
     pub fn page_number(&self) -> Ppn {
-        Ppn((self.0).0)
+        self.0
     }
 }
 
@@ -101,7 +126,7 @@ impl<T: Allocator> FrameAllocator<T> {
         self.allocator
             .alloc()
             .ok_or("no available frame to allocate")
-            .map(|offset| FrameHandle(PhysicalAddress(self.start_ppn.0 + offset)))
+            .map(|offset| FrameHandle(self.start_ppn + offset))
     }
 
     /// 将被释放的帧添加到空闲列表的尾部
