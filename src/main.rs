@@ -27,7 +27,7 @@ unsafe fn pre_init() {
 extern crate alloc;
 
 #[export_name = "_mp_hook"]
-pub extern fn mp_hook(hartid: usize, dtb: usize) -> bool {
+pub extern fn mp_hook(hartid: usize, _dtb: usize) -> bool {
     if hartid == 0 {
         true
     } else {

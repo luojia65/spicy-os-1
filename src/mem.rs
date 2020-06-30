@@ -3,6 +3,10 @@ use core::ops::{Add, AddAssign};
 use lazy_static::lazy_static;
 use spin::Mutex;
 
+// todo: on embedded devices, we know how much memory are there on SoC,
+// but on pc or other platforms where we can install external memory,
+// we should auto detect them other than hardcode it into linker script.
+
 extern "Rust" {
     static _sframe: u8;
     static _eframe: u8;
@@ -82,10 +86,6 @@ impl Drop for FrameHandle {
     fn drop(&mut self) {
         FRAME_ALLOCATOR.lock().dealloc(self);
     }
-}
-
-pub struct FrameRange {
-    range: Range<usize>,
 }
 
 lazy_static! {
