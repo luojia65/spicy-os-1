@@ -28,7 +28,7 @@ fn main(hartid: usize, dtb: usize) {
     println!("mvendorid    = {:?}", sbi::base::get_mvendorid());
     println!("marchid      = {:?}", sbi::base::get_marchid());
     println!("mimpid       = {:?}", sbi::base::get_mimpid());
-    
+
     use alloc::boxed::Box;
     use alloc::vec::Vec;
     let v = Box::new(5);
@@ -48,15 +48,15 @@ fn main(hartid: usize, dtb: usize) {
     for _ in 0..2 {
         let frame_0 = match mem::FRAME_ALLOCATOR.lock().alloc() {
             Result::Ok(frame_tracker) => frame_tracker,
-            Result::Err(err) => panic!("{}", err)
+            Result::Err(err) => panic!("{}", err),
         };
         let frame_1 = match mem::FRAME_ALLOCATOR.lock().alloc() {
             Result::Ok(frame_tracker) => frame_tracker,
-            Result::Err(err) => panic!("{}", err)
+            Result::Err(err) => panic!("{}", err),
         };
         println!("{:?} and {:?}", frame_0.address(), frame_1.address());
     }
-    
+
     unsafe {
         // 开启 STIE，允许时钟中断
         sie::set_stimer();
@@ -86,7 +86,7 @@ pub fn handle_exception(trap_frame: &mut TrapFrame, scause: Scause, stval: usize
     println!(
         "Exception occurred: {:?}; stval: 0x{:x}, sepc: 0x{:x}",
         scause.cause(),
-        stval, 
+        stval,
         trap_frame.sepc
     );
     use riscv::register::scause::{Exception, Trap};

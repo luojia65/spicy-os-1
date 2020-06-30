@@ -1,10 +1,10 @@
-use lazy_static::lazy_static;
-use spin::Mutex;
 use core::ops::Range;
 use core::ops::{Add, AddAssign};
+use lazy_static::lazy_static;
+use spin::Mutex;
 
 lazy_static! {
-    pub static ref KERNEL_END_ADDRESS: PhysicalAddress = 
+    pub static ref KERNEL_END_ADDRESS: PhysicalAddress =
         PhysicalAddress(unsafe { &supervisor_end as *const _ as usize });
 }
 
@@ -34,12 +34,12 @@ impl Ppn {
     // todo: const fn
     /// 将地址转换为页号，向下取整
     pub fn floor(address: PhysicalAddress) -> Self {
-        let address = address.0 ;
+        let address = address.0;
         Self(address / PAGE_SIZE)
     }
 
     /// 将地址转换为页号，向上取整
-    pub fn ceil(address: PhysicalAddress) -> Self { 
+    pub fn ceil(address: PhysicalAddress) -> Self {
         let address = address.0;
         Self(address / PAGE_SIZE + (address % PAGE_SIZE != 0) as usize)
     }
@@ -133,7 +133,8 @@ impl<T: Allocator> FrameAllocator<T> {
     ///
     /// 这个函数会在 [`FrameHandle`] 被 drop 时自动调用，不应在其他地方调用
     pub fn dealloc(&mut self, frame: &FrameHandle) {
-        self.allocator.dealloc(frame.page_number().0 - self.start_ppn.0);
+        self.allocator
+            .dealloc(frame.page_number().0 - self.start_ppn.0);
     }
 }
 
