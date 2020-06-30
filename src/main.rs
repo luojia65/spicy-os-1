@@ -27,7 +27,7 @@ unsafe fn pre_init() {
 extern crate alloc;
 
 #[export_name = "_mp_hook"]
-pub fn mp_hook(hartid: usize, dtb: usize) -> bool {
+pub extern fn mp_hook(hartid: usize, dtb: usize) -> bool {
     if hartid == 0 {
         true
     } else {
@@ -58,16 +58,17 @@ fn main(hartid: usize, dtb: usize) {
     println!("marchid      = {:?}", sbi::base::get_marchid());
     println!("mimpid       = {:?}", sbi::base::get_mimpid());
 
-    unsafe {
-        HEAP_ALLOCATOR
-            .lock()
-            .init(HEAP.as_ptr() as usize, HEAP_SIZE);
+    if hartid == 0 {
+        unsafe {
+            HEAP_ALLOCATOR
+                .lock()
+                .init(HEAP.as_ptr() as usize, HEAP_SIZE);
+        }
+        // wake other harts
+        // let hart_mask: [usize; 4] = [1, 0, 0, 0];
+        let hart_mask = 0b1110; // todo
+        sbi::legacy::send_ipi(hart_mask);
     }
-
-    // wake other harts
-    // let hart_mask: [usize; 4] = [1, 0, 0, 0];
-    let hart_mask = 0b1110; // todo
-    sbi::legacy::send_ipi(hart_mask);
 
     use alloc::boxed::Box;
     use alloc::vec::Vec;
