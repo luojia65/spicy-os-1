@@ -33,11 +33,6 @@ impl Mapping {
             llvm_asm!("csrw satp, $0" :: "r"(new_satp) :: "volatile");
             // 刷新 TLB
             llvm_asm!("sfence.vma" :::: "volatile");
-            // 这里sp的值还是旧的，也得映射掉
-            llvm_asm!("
-                li t0, 0xffffffff00000000 
-                add sp, sp, t0
-            " :::"t0": "volatile");
         }
     }
 

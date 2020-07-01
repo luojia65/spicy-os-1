@@ -38,8 +38,8 @@ debug: build
             -bios default \
             -device loader,file={{bin_file}},addr=0x80200000 \
             -smp threads=1 \
-            -gdb tcp::1234 -S
+            -gdb tcp::11111 -S
 gdb: 
-    @gdb --eval-command="file {{kernel_file}}" --eval-command="target remote localhost:1234"
+    @gdb --eval-command="file {{kernel_file}}" --eval-command="target remote localhost:11111"
 
     
