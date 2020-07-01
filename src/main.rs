@@ -99,7 +99,7 @@ fn main(hartid: usize, dtb: usize) {
         println!("{:x?} and {:x?}", frame_0.address(), frame_1.address());
     }
 
-    println!("Initialing page system");
+    println!("Initializing page system");
     let remap = mem::MemorySet::new_kernel().unwrap();
     println!("Instance created");
     remap.activate();

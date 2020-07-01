@@ -33,6 +33,11 @@ impl Mapping {
             llvm_asm!("csrw satp, $0" :: "r"(new_satp) :: "volatile");
             // 刷新 TLB
             llvm_asm!("sfence.vma" :::: "volatile");
+            // 这里sp的值还是旧的，也得映射掉
+            llvm_asm!("
+                li t0, 0xffffffff00000000 
+                add sp, sp, t0
+            " :::"t0": "volatile");
         }
     }
 
@@ -100,36 +105,6 @@ impl Mapping {
         }
         // 此时 entry 位于第三级页表
         Ok(entry)
-    }
-
-    /// 查找虚拟地址对应的物理地址
-    pub fn lookup(va: VirtualAddress) -> Option<PhysicalAddress> {
-        let mut current_ppn;
-        unsafe {
-            llvm_asm!("csrr $0, satp" : "=r"(current_ppn) ::: "volatile");
-            current_ppn ^= 8 << 60;
-        }
-
-        let root_table: &PageTable =
-            PhysicalAddress::from(PhysicalPageNumber(current_ppn)).deref_kernel();
-        let vpn = VirtualPageNumber::floor(va);
-        let mut entry = &root_table.entries[vpn.levels()[0]];
-        // 为了支持大页的查找，我们用 length 表示查找到的物理页需要加多少位的偏移
-        let mut length = 12 + 2 * 9;
-        for vpn_slice in &vpn.levels()[1..] {
-            if entry.is_empty() {
-                return None;
-            }
-            if entry.has_next_level() {
-                length -= 9;
-                entry = &mut entry.get_next_table().entries[*vpn_slice];
-            } else {
-                break;
-            }
-        }
-        let base = PhysicalAddress::from(entry.page_number()).0;
-        let offset = va.0 & ((1 << length) - 1);
-        Some(PhysicalAddress(base + offset))
     }
 
     /// 为给定的虚拟 / 物理页号建立映射关系

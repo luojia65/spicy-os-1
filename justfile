@@ -6,6 +6,7 @@ bin_file := "target/" + target + "/" + mode + "/kernel.bin"
 # objdump := "rust-objdump --arch-name=riscv64"
 objdump := "riscv64-unknown-elf-objdump"
 objcopy := "rust-objcopy --binary-architecture=riscv64"
+gdb := "riscv64-unknown-elf-gdb"
 size := "rust-size"
 
 build: kernel
@@ -29,3 +30,16 @@ asm: build
 
 size: build
     @{{size}} -A -x {{kernel_file}}
+
+debug: build
+    @qemu-system-riscv64 \
+            -machine virt \
+            -nographic \
+            -bios default \
+            -device loader,file={{bin_file}},addr=0x80200000 \
+            -smp threads=1 \
+            -gdb tcp::1234 -S
+gdb: 
+    @gdb --eval-command="file {{kernel_file}}" --eval-command="target remote localhost:1234"
+
+    
