@@ -27,7 +27,7 @@ unsafe fn pre_init() {
 extern crate alloc;
 
 #[export_name = "_mp_hook"]
-pub extern fn mp_hook(hartid: usize, _dtb: usize) -> bool {
+pub extern "C" fn mp_hook(hartid: usize, _dtb: usize) -> bool {
     if hartid == 0 {
         true
     } else {
@@ -96,8 +96,14 @@ fn main(hartid: usize, dtb: usize) {
             Result::Ok(frame_tracker) => frame_tracker,
             Result::Err(err) => panic!("{}", err),
         };
-        println!("{:?} and {:?}", frame_0.address(), frame_1.address());
+        println!("{:x?} and {:x?}", frame_0.address(), frame_1.address());
     }
+
+    println!("Initialing page system");
+    let remap = mem::MemorySet::new_kernel().unwrap();
+    println!("Instance created");
+    remap.activate();
+    println!("Page system activated");
 
     unsafe {
         // 开启 STIE，允许时钟中断

@@ -1,11 +1,11 @@
+use bit_field::BitField;
+use bitflags::bitflags;
 use core::ops::Range;
 use core::ops::{Add, AddAssign};
 use lazy_static::lazy_static;
-use bitflags::bitflags;
-use bit_field::BitField;
-use spin::Mutex;
 use riscv_sbi::println;
-use riscv::register::satp;
+use spin::Mutex;
+// use riscv::register::satp;
 
 // todo: on embedded devices, we know how much memory are there on SoC,
 // but on pc or other platforms where we can install external memory,
@@ -24,11 +24,11 @@ pub const KERNEL_MAP_OFFSET: usize = 0xffff_ffff_0000_0000;
 
 lazy_static! {
     /// 可以访问的内存区域起始地址
-    pub static ref MEMORY_START_ADDRESS: PhysicalAddress = 
-        PhysicalAddress(unsafe { &_sframe as *const _ as usize });
+    pub static ref MEMORY_START_ADDRESS: PhysicalAddress =
+        PhysicalAddress(unsafe { &_sframe as *const _ as usize } - KERNEL_MAP_OFFSET);
     /// 可以访问的内存区域结束地址
-    pub static ref MEMORY_END_ADDRESS: PhysicalAddress = 
-        PhysicalAddress(unsafe { &_eframe as *const _ as usize });
+    pub static ref MEMORY_END_ADDRESS: PhysicalAddress =
+        PhysicalAddress(unsafe { &_eframe as *const _ as usize } - KERNEL_MAP_OFFSET);
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -320,6 +320,7 @@ bitflags! {
     }
 }
 
+#[derive(Debug)]
 pub struct FrameTracker(Ppn);
 
 impl FrameTracker {
@@ -464,6 +465,7 @@ impl PageTable {
 /// 而 `PageTableTracker` 会保存在某个线程的元数据中（也就是在操作系统的堆上），指向其真正的页表。
 ///
 /// 当 `PageTableTracker` 被 drop 时，会自动 drop `FrameTracker`，进而释放帧。
+#[derive(Debug)]
 pub struct PageTableTracker(pub FrameTracker);
 
 impl PageTableTracker {
@@ -521,7 +523,7 @@ impl Iterator for RangeIter<Vpn> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.0.start.0 < self.0.end.0 {
-            let mut n = Vpn(self.0.start.0 + 1);
+            let mut n = Vpn(self.0.start.0 + PAGE_SIZE);
             core::mem::swap(&mut n, &mut self.0.start);
             Some(n)
         } else {
@@ -545,7 +547,7 @@ impl Segment {
     pub fn page_range(&self) -> Range<Vpn> {
         Vpn::floor(self.range.start)..Vpn::ceil(self.range.end)
     }
-    
+
     pub fn iter(&self) -> impl Iterator<Item = Vpn> {
         // todo
         RangeIter(self.page_range())
@@ -580,17 +582,20 @@ impl Mapping {
         // 这里不用 self.page_tables[0] 避免后面产生 borrow-check 冲突（我太菜了）
         let root_table: &mut PageTable = PhysicalAddress::from(self.root_ppn).deref_kernel();
         let mut entry = &mut root_table.entries[vpn.levels()[0]];
-        // println!("[{}] = {:x?}", vpn.levels()[0], entry);
+        println!("[{}] = {:x?}", vpn.levels()[0], entry);
         for vpn_slice in &vpn.levels()[1..] {
+            println!("[i] vpn slice: {:x?}", vpn_slice);
             if entry.is_empty() {
                 // 如果页表不存在，则需要分配一个新的页表
                 let new_table = PageTableTracker::new(FRAME_ALLOCATOR.lock().alloc()?);
+                println!("[!] Create a new page table {:x?}", new_table);
                 let new_ppn = new_table.page_number();
                 // 将新页表的页号写入当前的页表项
                 *entry = PageTableEntry::new(new_ppn, Flags::VALID);
                 // 保存页表
                 self.page_tables.push(new_table);
             }
+            println!("[!] Next level: {:x?}", entry);
             // 进入下一级页表（使用偏移量来访问物理地址）
             entry = &mut entry.get_next_table().entries[*vpn_slice];
         }
@@ -599,12 +604,7 @@ impl Mapping {
     }
 
     /// 为给定的虚拟 / 物理页号建立映射关系
-    fn map_one(
-        &mut self,
-        vpn: Vpn,
-        ppn: Ppn,
-        flags: Flags,
-    ) -> MemoryResult<()> {
+    fn map_one(&mut self, vpn: Vpn, ppn: Ppn, flags: Flags) -> MemoryResult<()> {
         // 定位到页表项
         let entry = self.find_entry(vpn)?;
         assert!(entry.is_empty(), "virtual address is already mapped");
@@ -620,15 +620,13 @@ impl Mapping {
     ///
     ///
     /// 未被分配物理页面的虚拟页号暂时不会写入页表当中，它们会在发生 PageFault 后再建立页表项。
-    pub fn map(
-        &mut self,
-        segment: &Segment,
-    ) -> MemoryResult<Vec<(Vpn, FrameTracker)>> {
+    pub fn map(&mut self, segment: &Segment) -> MemoryResult<Vec<(Vpn, FrameTracker)>> {
         // segment 可能可以内部做好映射
         if let Some(ppn_iter) = segment.iter_mapped() {
             // segment 可以提供映射，那么直接用它得到 vpn 和 ppn 的迭代器
             println!("map {:x?}", segment.page_range());
             for (vpn, ppn) in segment.iter().zip(ppn_iter) {
+                // println!("Map one: Vpn {:x?} -> Ppn {:x?}", vpn, ppn);
                 self.map_one(vpn, ppn, segment.flags)?;
             }
             Ok(vec![])
@@ -645,11 +643,12 @@ impl Mapping {
             Ok(allocated_pairs)
         }
     }
-    
+
     /// 将当前的映射加载到 `satp` 寄存器
     pub fn activate(&self) {
         // satp 低 27 位为页号，高 4 位为模式，8 表示 Sv39
         let new_satp = self.root_ppn.0 | (8 << 60);
+        println!("Begin activate");
         unsafe {
             // 将 new_satp 的值写到 satp 寄存器
             llvm_asm!("csrw satp, $0" :: "r"(new_satp) :: "volatile");
@@ -681,6 +680,8 @@ impl MemorySet {
             fn _edata();
             fn _sbss();
             fn _ebss();
+            fn _estack();
+            fn _sstack();
             fn _sframe();
             fn _eframe();
         }
@@ -692,8 +693,7 @@ impl MemorySet {
                 map_type: MapType::Linear,
                 range: Range::<VirtualAddress>::from(
                     (_stext as usize).into()..(_etext as usize).into(),
-                )
-                .into(),
+                ),
                 flags: Flags::VALID | Flags::READABLE | Flags::EXECUTABLE,
             },
             // .rodata 段，r--
@@ -701,8 +701,7 @@ impl MemorySet {
                 map_type: MapType::Linear,
                 range: Range::<VirtualAddress>::from(
                     (_srodata as usize).into()..(_erodata as usize).into(),
-                )
-                .into(),
+                ),
                 flags: Flags::VALID | Flags::READABLE,
             },
             // .data 段，rw-
@@ -710,8 +709,7 @@ impl MemorySet {
                 map_type: MapType::Linear,
                 range: Range::<VirtualAddress>::from(
                     (_sdata as usize).into()..(_edata as usize).into(),
-                )
-                .into(),
+                ),
                 flags: Flags::VALID | Flags::READABLE | Flags::WRITABLE,
             },
             // .bss 段，rw-
@@ -719,6 +717,14 @@ impl MemorySet {
                 map_type: MapType::Linear,
                 range: Range::<VirtualAddress>::from(
                     (_sbss as usize).into()..(_ebss as usize).into(),
+                ),
+                flags: Flags::VALID | Flags::READABLE | Flags::WRITABLE,
+            },
+            // .stack 段，rw-
+            Segment {
+                map_type: MapType::Linear,
+                range: Range::<VirtualAddress>::from(
+                    (_estack as usize).into()..(_sstack as usize).into(),
                 ),
                 flags: Flags::VALID | Flags::READABLE | Flags::WRITABLE,
             },

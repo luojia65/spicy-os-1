@@ -3,7 +3,8 @@ mode := "debug"
 kernel_file := "target/" + target + "/" + mode + "/spicy-os"
 bin_file := "target/" + target + "/" + mode + "/kernel.bin"
 
-objdump := "rust-objdump --arch-name=riscv64"
+# objdump := "rust-objdump --arch-name=riscv64"
+objdump := "riscv64-unknown-elf-objdump"
 objcopy := "rust-objcopy --binary-architecture=riscv64"
 size := "rust-size"
 
