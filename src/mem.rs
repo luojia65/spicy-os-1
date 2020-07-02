@@ -10,7 +10,7 @@ extern "Rust" {
     static _eframe: u8;
 }
 
-use self::address::*;
+pub use self::address::*;
 lazy_static! {
     /// 可以访问的内存区域起始地址
     pub static ref MEMORY_START_ADDRESS: PhysicalAddress =

@@ -4,6 +4,8 @@
 #![feature(const_raw_ptr_to_usize_cast)]
 
 mod mem;
+mod thread;
+mod process;
 
 use riscv::register::{scause::Scause, sie, sip, sstatus, time};
 use riscv_sbi::{self as sbi, println};
