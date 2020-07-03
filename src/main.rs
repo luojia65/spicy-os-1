@@ -160,7 +160,7 @@ const INTERVAL: u64 = 100000;
 // fn SupervisorTimer() {
 
 #[export_name = "SupervisorTimer"]
-unsafe extern "C" fn supervisor_timer(context: &mut TrapFrame) -> *mut TrapFrame {
+unsafe extern "C" fn supervisor_timer(context: &mut TrapFrame, scause: Scause, stval: usize) -> *mut TrapFrame {
     static mut TICKS: usize = 0;
     use crate::process::PROCESSOR;
 

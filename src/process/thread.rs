@@ -33,7 +33,11 @@ pub fn new_context(
         assert!(arguments.len() <= 8);
         ctx.x[10..(10 + arguments.len())].copy_from_slice(arguments);
     }
-    let mut context = unsafe { core::mem::MaybeUninit::uninit().assume_init() };
+    let mut context = riscv_sbi_rt::TrapFrame {
+        x: [0; 32],
+        sepc: 0,
+        sstatus: unsafe { core::mem::MaybeUninit::zeroed().assume_init() }
+    };
     // 设置栈顶指针
     set_sp(&mut context, stack_top);
     set_ra(&mut context, -1isize as usize);
