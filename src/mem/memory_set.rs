@@ -10,6 +10,7 @@ use crate::mem::{
     MemoryResult,
 };
 use alloc::{vec, vec::Vec};
+use core::ops::Range;
 
 /// 一个进程所有关于内存空间管理的信息
 pub struct MemorySet {
@@ -101,5 +102,29 @@ impl MemorySet {
     /// 如果当前页表就是自身，则不会替换，但仍然会刷新 TLB。
     pub fn activate(&self) {
         self.mapping.activate();
+    }
+
+    /// 添加一个 [`Segment`] 的内存映射
+    pub fn add_segment(&mut self, segment: Segment, init_data: Option<&[u8]>) -> MemoryResult<()> {
+        // 检测 segment 没有重合
+        assert!(!self.overlap_with(segment.page_range()));
+        // 映射并将新分配的页面保存下来
+        self.allocated_pairs
+            .extend(self.mapping.map(&segment, init_data)?);
+        self.segments.push(segment);
+        Ok(())
+    }
+
+    /// 检测一段内存区域和已有的是否存在重叠区域
+    pub fn overlap_with(&self, range: Range<VirtualPageNumber>) -> bool {
+        fn range_overlap<T: core::cmp::PartialOrd>(a: &Range<T>, b: &Range<T>) -> bool {
+            b.contains(&a.start) || a.contains(&b.start) || b.contains(&a.end) || a.contains(&b.end)
+        }
+        for seg in self.segments.iter() {
+            if range_overlap(&range, &seg.page_range()) {
+                return true;
+            }
+        }
+        false
     }
 }

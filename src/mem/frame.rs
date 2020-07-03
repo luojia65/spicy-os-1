@@ -1,8 +1,8 @@
+use crate::mem::*;
+use alloc::{vec, vec::Vec};
+use core::ops::Range;
 use lazy_static::lazy_static;
 use spin::Mutex;
-use crate::mem::*;
-use alloc::{vec::Vec, vec};
-use core::ops::Range;
 
 #[derive(Debug)]
 pub struct FrameTracker(PhysicalPageNumber);

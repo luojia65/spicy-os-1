@@ -2,9 +2,10 @@
 #![no_main]
 #![feature(global_asm, llvm_asm)]
 #![feature(const_raw_ptr_to_usize_cast)]
+#![feature(drain_filter)]
 
+mod algo;
 mod mem;
-mod thread;
 mod process;
 
 use riscv::register::{scause::Scause, sie, sip, sstatus, time};
@@ -18,8 +19,6 @@ static HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
 const HEAP_SIZE: usize = 0x100_0000;
 
 static mut HEAP: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
-
-const INTERVAL: u64 = 100000;
 
 #[pre_init]
 unsafe fn pre_init() {
@@ -110,30 +109,65 @@ fn main(hartid: usize, dtb: usize) {
     unsafe {
         // 开启 STIE，允许时钟中断
         sie::set_stimer();
-        // 开启 SIE（不是 sie 寄存器），允许内核态被中断打断
+        // // 开启 SIE（不是 sie 寄存器），允许内核态被中断打断
         sstatus::set_sie();
     }
     // 设置下一次时钟中断
+    const INTERVAL: u64 = 100000;
     sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
-    unsafe {
-        llvm_asm!("ebreak"::::"volatile");
-    }
-    loop {}
-}
+    // unsafe {
+    //     llvm_asm!("ebreak"::::"volatile");
+    // }
 
-#[interrupt]
-fn SupervisorTimer() {
-    static mut TICKS: usize = 0;
-    sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
-    *TICKS += 1;
-    if *TICKS % 100 == 0 {
-        println!("100 ticks~");
+    // 新建一个带有内核映射的进程。需要执行的代码就在内核中
+    let process = process::Process::new_kernel().unwrap();
+
+    for message in 0..8 {
+        let thread = process::Thread::new(
+            process.clone(),         // 使用同一个进程
+            sample_process as usize, // 入口函数
+            Some(&[message]),        // 参数
+        )
+        .unwrap();
+        process::PROCESSOR.get().add_thread(thread);
     }
+
+    // 把多余的 process 引用丢弃掉
+    drop(process);
+
+    process::PROCESSOR.get().run()
 }
 
 #[interrupt]
 fn SupervisorSoft() {
     println!("SupervisorSoft!");
+}
+
+fn sample_process(message: usize) {
+    for i in 0..1000000 {
+        if i % 200000 == 0 {
+            println!("thread {}", message);
+        }
+    }
+}
+
+const INTERVAL: u64 = 100000;
+
+// #[interrupt]
+// fn SupervisorTimer() {
+
+#[export_name = "SupervisorTimer"]
+unsafe extern "C" fn supervisor_timer(context: &mut TrapFrame) -> *mut TrapFrame {
+    static mut TICKS: usize = 0;
+    use crate::process::PROCESSOR;
+
+    sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
+    TICKS += 1;
+    if TICKS % 100 == 0 {
+        println!("100 ticks~");
+    }
+
+    PROCESSOR.get().tick(context)
 }
 
 #[export_name = "ExceptionHandler"]

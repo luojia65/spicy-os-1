@@ -23,13 +23,14 @@ pub use self::memory_set::MemorySet;
 
 mod address;
 mod frame;
-mod page_table_entry;
 mod mapping;
-mod page_table;
 mod memory_set;
+mod page_table;
+mod page_table_entry;
 mod segment;
 
-pub(crate) use self::frame::FRAME_ALLOCATOR;
+pub use self::frame::FRAME_ALLOCATOR;
+pub use self::page_table_entry::Flags;
+pub use self::segment::{MapType, Segment};
 
 pub type MemoryResult<T> = core::result::Result<T, &'static str>;
-

@@ -7,8 +7,8 @@ use crate::mem::{
     address::*,
     frame::{FrameTracker, FRAME_ALLOCATOR},
     page_table::{PageTable, PageTableTracker},
-    page_table_entry::{PageTableEntry, Flags},
-    segment::{Segment, MapType},
+    page_table_entry::{Flags, PageTableEntry},
+    segment::{MapType, Segment},
     MemoryResult,
 };
 use alloc::{vec, vec::Vec};
@@ -71,9 +71,7 @@ impl Mapping {
                 Ok(Vec::new())
             }
             // 需要分配帧进行映射
-            MapType::Framed => {
-                todo!("framed memory")
-            }
+            MapType::Framed => todo!("framed memory"),
         }
     }
 
