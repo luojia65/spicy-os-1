@@ -99,6 +99,7 @@ impl Processor {
         if self.current_thread.is_none() {
             self.current_thread = Some(thread.clone());
         }
+        // riscv_sbi::println!("[add_thread] add {:x?}", thread);
         self.scheduler.add_thread(thread, 0);
     }
 }

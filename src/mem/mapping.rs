@@ -14,7 +14,7 @@ use crate::mem::{
 use alloc::{vec, vec::Vec};
 use core::ptr::slice_from_raw_parts_mut;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 /// 某个进程的内存映射关系
 pub struct Mapping {
     /// 保存所有使用到的页表
@@ -71,7 +71,47 @@ impl Mapping {
                 Ok(Vec::new())
             }
             // 需要分配帧进行映射
-            MapType::Framed => todo!("framed memory"),
+            MapType::Framed => {
+                // 记录所有成功分配的页面映射
+                let mut allocated_pairs = Vec::new();
+                use super::segment::RangeIter;
+                for vpn in RangeIter(segment.page_range()) {
+                    // 分配物理页面
+                    let mut frame = FRAME_ALLOCATOR.lock().alloc()?;
+                    // 映射，填充 0，记录
+                    self.map_one(vpn, frame.page_number(), segment.flags | Flags::VALID)?;
+                    frame.fill(0);
+                    allocated_pairs.push((vpn, frame));
+                }
+
+                // 拷贝数据，注意页表尚未应用，无法直接从刚刚映射的虚拟地址访问，因此必须用物理地址 + 偏移来访问。
+                if let Some(data) = init_data {
+                    // 对于 bss，参数会传入 data，但其长度为 0。我们已经在前面用 0 填充过页面了，因此跳过
+                    if !data.is_empty() {
+                        for (vpn, frame) in allocated_pairs.iter_mut() {
+                            // 拷贝时必须考虑区间与整页不对齐的情况
+                            //    start（仅第一页时非零）
+                            //      |        stop（仅最后一页时非零）
+                            // 0    |---data---|          4096
+                            // |------------page------------|
+                            let page_address = VirtualAddress::from(*vpn);
+                            let start = if segment.range.start > page_address {
+                                segment.range.start - page_address
+                            } else {
+                                0
+                            };
+                            let stop = core::cmp::min(PAGE_SIZE, segment.range.end - page_address);
+                            // 计算来源和目标区间并进行拷贝
+                            let dst_slice = &mut frame[start..stop];
+                            let src_slice = &data[(page_address + start - segment.range.start)
+                                ..(page_address + stop - segment.range.start)];
+                            dst_slice.copy_from_slice(src_slice);
+                        }
+                    }
+                }
+
+                Ok(allocated_pairs)
+            },
         }
     }
 

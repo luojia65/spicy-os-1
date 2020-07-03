@@ -12,6 +12,7 @@ use crate::mem::{
 use alloc::{vec, vec::Vec};
 use core::ops::Range;
 
+#[derive(Debug)]
 /// 一个进程所有关于内存空间管理的信息
 pub struct MemorySet {
     /// 维护页表和映射关系

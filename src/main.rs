@@ -3,6 +3,7 @@
 #![feature(global_asm, llvm_asm)]
 #![feature(const_raw_ptr_to_usize_cast)]
 #![feature(drain_filter)]
+#![feature(slice_fill)]
 
 mod algo;
 mod mem;
@@ -106,23 +107,15 @@ fn main(hartid: usize, dtb: usize) {
     remap.activate();
     println!("Page system activated");
 
-    unsafe {
-        // 开启 STIE，允许时钟中断
-        sie::set_stimer();
-        // // 开启 SIE（不是 sie 寄存器），允许内核态被中断打断
-        sstatus::set_sie();
-    }
-    // 设置下一次时钟中断
-    const INTERVAL: u64 = 100000;
-    sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
-    unsafe {
-        llvm_asm!("ebreak"::::"volatile");
-    }
+    // unsafe {
+    //     llvm_asm!("ebreak"::::"volatile");
+    // }
 
     // 新建一个带有内核映射的进程。需要执行的代码就在内核中
     let process = process::Process::new_kernel().unwrap();
 
     for message in 0..8 {
+        println!("message: {}", message);
         let thread = process::Thread::new(
             process.clone(),         // 使用同一个进程
             sample_process as usize, // 入口函数
@@ -134,6 +127,16 @@ fn main(hartid: usize, dtb: usize) {
 
     // 把多余的 process 引用丢弃掉
     drop(process);
+
+    unsafe {
+        // 开启 STIE，允许时钟中断
+        sie::set_stimer();
+        // // 开启 SIE（不是 sie 寄存器），允许内核态被中断打断
+        sstatus::set_sie();
+    }
+    // 设置下一次时钟中断
+    const INTERVAL: u64 = 100000;
+    sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
 
     process::PROCESSOR.get().run()
 }

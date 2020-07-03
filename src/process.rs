@@ -15,6 +15,7 @@ use alloc::sync::Arc;
 use core::ops::Range;
 use spin::RwLock;
 
+#[derive(Debug)]
 /// 进程的信息
 pub struct Process {
     /// 线程是否在用户态

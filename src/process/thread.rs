@@ -8,7 +8,7 @@ use core::ops::Range;
 use riscv::register::sstatus;
 use spin::{Mutex, RwLock};
 
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct ThreadId(usize);
 
 type Context = riscv_sbi_rt::TrapFrame;
@@ -71,6 +71,7 @@ pub fn new_context(
     context
 }
 
+#[derive(Debug)]
 /// 线程的信息
 pub struct Thread {
     /// 线程 ID
