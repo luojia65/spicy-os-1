@@ -174,7 +174,11 @@ unsafe extern "C" fn supervisor_timer(context: &mut TrapFrame) -> *mut TrapFrame
 }
 
 #[export_name = "ExceptionHandler"]
-pub fn handle_exception(trap_frame: &mut TrapFrame, scause: Scause, stval: usize) -> *mut TrapFrame {
+pub fn handle_exception(
+    trap_frame: &mut TrapFrame,
+    scause: Scause,
+    stval: usize,
+) -> *mut TrapFrame {
     println!(
         "Exception occurred: {:?}; stval: 0x{:x}, sepc: 0x{:x}",
         scause.cause(),

@@ -111,7 +111,7 @@ impl Mapping {
                 }
 
                 Ok(allocated_pairs)
-            },
+            }
         }
     }
 
