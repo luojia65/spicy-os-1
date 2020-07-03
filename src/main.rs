@@ -132,7 +132,7 @@ fn main(hartid: usize, dtb: usize) {
         // 开启 STIE，允许时钟中断
         sie::set_stimer();
         // // 开启 SIE（不是 sie 寄存器），允许内核态被中断打断
-        sstatus::set_sie();
+        // sstatus::set_sie();
     }
     // 设置下一次时钟中断
     const INTERVAL: u64 = 100000;
