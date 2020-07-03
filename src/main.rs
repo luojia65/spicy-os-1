@@ -115,9 +115,9 @@ fn main(hartid: usize, dtb: usize) {
     // 设置下一次时钟中断
     const INTERVAL: u64 = 100000;
     sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
-    // unsafe {
-    //     llvm_asm!("ebreak"::::"volatile");
-    // }
+    unsafe {
+        llvm_asm!("ebreak"::::"volatile");
+    }
 
     // 新建一个带有内核映射的进程。需要执行的代码就在内核中
     let process = process::Process::new_kernel().unwrap();
@@ -171,7 +171,7 @@ unsafe extern "C" fn supervisor_timer(context: &mut TrapFrame) -> *mut TrapFrame
 }
 
 #[export_name = "ExceptionHandler"]
-pub fn handle_exception(trap_frame: &mut TrapFrame, scause: Scause, stval: usize) {
+pub fn handle_exception(trap_frame: &mut TrapFrame, scause: Scause, stval: usize) -> *mut TrapFrame {
     println!(
         "Exception occurred: {:?}; stval: 0x{:x}, sepc: 0x{:x}",
         scause.cause(),
@@ -183,4 +183,5 @@ pub fn handle_exception(trap_frame: &mut TrapFrame, scause: Scause, stval: usize
         println!("Breakpoint at 0x{:x}", trap_frame.sepc);
         trap_frame.sepc += 2;
     }
+    trap_frame as *mut _
 }
