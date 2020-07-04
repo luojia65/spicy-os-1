@@ -1,6 +1,8 @@
-use lazy_static::lazy_static;
+use crate::mem::{
+    FrameTracker, Mapping, PhysicalAddress, VirtualAddress, FRAME_ALLOCATOR, PAGE_SIZE,
+};
 use alloc::collections::BTreeMap;
-use crate::mem::{PhysicalAddress, VirtualAddress, Mapping, FrameTracker, FRAME_ALLOCATOR, PAGE_SIZE};
+use lazy_static::lazy_static;
 use spin::RwLock;
 
 lazy_static! {

@@ -127,11 +127,12 @@ impl MemorySet {
 
     /// 检测一段内存区域和已有的是否存在重叠区域
     pub fn overlap_with(&self, range: Range<VirtualPageNumber>) -> bool {
-        fn range_overlap<T: core::cmp::PartialOrd>(a: &Range<T>, b: &Range<T>) -> bool {
-            b.contains(&a.start) || a.contains(&b.start) || b.contains(&a.end) || a.contains(&b.end)
+        fn range_overlap<T: core::cmp::Ord + Copy>(a: &Range<T>, b: &Range<T>) -> bool {
+            T::min(a.end, b.end) > T::max(a.start, b.start)
         }
         for seg in self.segments.iter() {
             if range_overlap(&range, &seg.page_range()) {
+                riscv_sbi::println!("Overlap! {:?} and {:?}", &range, &seg.page_range());
                 return true;
             }
         }
@@ -152,6 +153,7 @@ impl MemorySet {
             // 从每个字段读取「起始地址」「大小」和「数据」
             let start = VirtualAddress(program_header.virtual_addr() as usize);
             let size = program_header.mem_size() as usize;
+            riscv_sbi::println!("Start: {:016x?}; Size: {:016x?}", start, size);
             let data: &[u8] =
                 if let SegmentData::Undefined(data) = program_header.get_data(file).unwrap() {
                     data

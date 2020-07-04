@@ -6,15 +6,15 @@
 #![feature(slice_fill)]
 
 mod algo;
-mod mem;
-mod process;
 mod driver;
 mod fs;
+mod mem;
+mod process;
 
+use crate::process::{Process, Thread, PROCESSOR};
 use riscv::register::{scause::Scause, sie, sip, time};
 use riscv_sbi::{self as sbi, println};
 use riscv_sbi_rt::{entry, interrupt, pre_init, TrapFrame};
-use crate::process::{Thread, Process, PROCESSOR};
 
 use linked_list_allocator::LockedHeap;
 #[global_allocator]
@@ -143,8 +143,8 @@ fn SupervisorSoft() {
 }
 
 fn start_user_thread(app_name: &str) {
-    use xmas_elf::ElfFile;
     use crate::fs::*;
+    use xmas_elf::ElfFile;
     // 从文件系统中找到程序
     let app = fs::ROOT_INODE.find(app_name).unwrap();
     // 读取数据
@@ -165,7 +165,11 @@ const INTERVAL: u64 = 100000;
 // fn SupervisorTimer() {
 
 #[export_name = "SupervisorTimer"]
-unsafe extern "C" fn supervisor_timer(context: &mut TrapFrame, _scause: Scause, _stval: usize) -> *mut TrapFrame {
+unsafe extern "C" fn supervisor_timer(
+    context: &mut TrapFrame,
+    _scause: Scause,
+    _stval: usize,
+) -> *mut TrapFrame {
     static mut TICKS: usize = 0;
 
     sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));

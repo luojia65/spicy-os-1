@@ -1,5 +1,5 @@
-use core::slice;
 use crate::mem::VirtualAddress;
+use core::slice;
 use device_tree::{DeviceTree, Node};
 
 const DEVICE_TREE_MAGIC: u32 = 0xd00d_feed;

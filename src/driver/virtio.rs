@@ -1,10 +1,10 @@
-mod virtio_mmio;
 mod virtio_blk;
+mod virtio_mmio;
 
-use device_tree::{util::SliceRead, Node};
-use virtio_drivers::{DeviceType, VirtIOHeader};
 use crate::mem::{PhysicalAddress, VirtualAddress};
+use device_tree::{util::SliceRead, Node};
 use riscv_sbi::println;
+use virtio_drivers::{DeviceType, VirtIOHeader};
 
 /// 从设备树的某个节点探测 virtio 协议具体类型
 pub fn virtio_probe(node: &Node) {

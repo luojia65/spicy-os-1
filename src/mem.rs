@@ -30,8 +30,8 @@ mod page_table_entry;
 mod segment;
 
 pub use self::frame::{FrameTracker, FRAME_ALLOCATOR};
+pub use self::mapping::Mapping;
 pub use self::page_table_entry::Flags;
 pub use self::segment::{MapType, Segment};
-pub use self::mapping::Mapping;
 
 pub type MemoryResult<T> = core::result::Result<T, &'static str>;

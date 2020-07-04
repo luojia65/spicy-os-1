@@ -1,6 +1,6 @@
-use rcore_fs::dev;
 use super::Driver;
 use alloc::sync::Arc;
+use rcore_fs::dev;
 
 /// 块设备抽象（驱动的引用）
 pub struct BlockDevice(pub Arc<dyn Driver>);

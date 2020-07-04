@@ -114,7 +114,6 @@ impl Mapping {
             }
         }
     }
-
     /// 找到给定虚拟页号的三级页表项
     ///
     /// 如果找不到对应的页表项，则会相应创建页表
@@ -184,5 +183,4 @@ impl Mapping {
         let offset = va.0 & ((1 << length) - 1);
         Some(PhysicalAddress(base + offset))
     }
-
 }

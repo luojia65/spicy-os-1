@@ -1,7 +1,7 @@
 use crate::mem::{PhysicalAddress, VirtualAddress};
 
-mod device_tree;
 pub mod block;
+mod device_tree;
 mod virtio;
 
 use riscv_sbi::println;
@@ -13,7 +13,6 @@ pub fn init(dtb_pa: PhysicalAddress) {
     println!("mod driver initialized")
 }
 
-
 /// 驱动类型
 ///
 /// 目前只有块设备，可能还有网络、GPU 设备等
@@ -23,10 +22,10 @@ pub enum DeviceType {
     Block,
 }
 
-use spin::RwLock;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use lazy_static::lazy_static;
+use spin::RwLock;
 
 /// 驱动的接口
 pub trait Driver: Send + Sync {
