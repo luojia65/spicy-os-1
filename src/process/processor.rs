@@ -14,6 +14,7 @@ mod unsafe_wrapper {
     }
 
     impl<T> UnsafeWrapper<T> {
+        #[allow(unused)]
         pub fn new(object: T) -> Self {
             Self {
                 object: UnsafeCell::new(object),

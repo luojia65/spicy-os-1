@@ -1,6 +1,9 @@
+mod inode_ext;
+pub use inode_ext::*;
+
 use lazy_static::lazy_static;
 use alloc::sync::Arc;
-use crate::driver::{Driver, DeviceType, DRIVERS, block::BlockDevice};
+use crate::driver::{DeviceType, DRIVERS, block::BlockDevice};
 use rcore_fs::{dev::block_cache::BlockCache, vfs::*};
 use rcore_fs_sfs::SimpleFileSystem;
 use riscv_sbi::{print, println};

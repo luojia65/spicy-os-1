@@ -11,7 +11,7 @@ mod process;
 mod driver;
 mod fs;
 
-use riscv::register::{scause::Scause, sie, sip, sstatus, time};
+use riscv::register::{scause::Scause, sie, sip, time};
 use riscv_sbi::{self as sbi, println};
 use riscv_sbi_rt::{entry, interrupt, pre_init, TrapFrame};
 use crate::process::{Thread, Process, PROCESSOR};
@@ -117,12 +117,9 @@ fn main(hartid: usize, dtb_pa: usize) {
     driver::init(mem::PhysicalAddress(dtb_pa));
     fs::init();
 
-
     let process = Process::new_kernel().unwrap();
 
-    PROCESSOR
-        .get()
-        .add_thread(Thread::new(process.clone(), simple as usize, Some(&[0])).unwrap());
+    start_user_thread("hello-world");
 
     // 把多余的 process 引用丢弃掉
     drop(process);
@@ -145,17 +142,21 @@ fn SupervisorSoft() {
     println!("SupervisorSoft!");
 }
 
-/// 测试任何内核线程都可以操作文件系统和驱动
-fn simple(id: usize) {
-    println!("hello from thread id {}", id);
-    // 新建一个目录
-    fs::ROOT_INODE
-        .create("tmp", rcore_fs::vfs::FileType::Dir, 0o666)
-        .expect("failed to mkdir /tmp");
-    // 输出根文件目录内容
-    fs::ls("/");
-
-    loop {}
+fn start_user_thread(app_name: &str) {
+    use xmas_elf::ElfFile;
+    use crate::fs::*;
+    // 从文件系统中找到程序
+    let app = fs::ROOT_INODE.find(app_name).unwrap();
+    // 读取数据
+    let data = app.readall().unwrap();
+    // 解析 ELF 文件
+    let elf = ElfFile::new(data.as_slice()).unwrap();
+    // 利用 ELF 文件创建线程，映射空间并加载数据
+    let process = Process::from_elf(&elf, true).unwrap();
+    // 再从 ELF 中读出程序入口地址
+    let thread = Thread::new(process, elf.header.pt2.entry_point() as usize, None).unwrap();
+    // 添加线程
+    PROCESSOR.get().add_thread(thread);
 }
 
 const INTERVAL: u64 = 100000;
@@ -164,7 +165,7 @@ const INTERVAL: u64 = 100000;
 // fn SupervisorTimer() {
 
 #[export_name = "SupervisorTimer"]
-unsafe extern "C" fn supervisor_timer(context: &mut TrapFrame, scause: Scause, stval: usize) -> *mut TrapFrame {
+unsafe extern "C" fn supervisor_timer(context: &mut TrapFrame, _scause: Scause, _stval: usize) -> *mut TrapFrame {
     static mut TICKS: usize = 0;
 
     sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));

@@ -24,15 +24,15 @@ pub struct Segment {
 }
 
 impl Segment {
-    /// 遍历对应的物理地址（如果可能）
-    pub fn iter_mapped(&self) -> Option<impl Iterator<Item = PhysicalPageNumber>> {
-        match self.map_type {
-            // 线性映射可以直接将虚拟地址转换
-            MapType::Linear => Some(RangeIter(self.page_range()).map(PhysicalPageNumber::from)),
-            // 按帧映射无法直接获得物理地址，需要分配
-            MapType::Framed => None,
-        }
-    }
+    // /// 遍历对应的物理地址（如果可能）
+    // pub fn iter_mapped(&self) -> Option<impl Iterator<Item = PhysicalPageNumber>> {
+    //     match self.map_type {
+    //         // 线性映射可以直接将虚拟地址转换
+    //         MapType::Linear => Some(RangeIter(self.page_range()).map(PhysicalPageNumber::from)),
+    //         // 按帧映射无法直接获得物理地址，需要分配
+    //         MapType::Framed => None,
+    //     }
+    // }
 
     /// 将地址相应地上下取整，获得虚拟页号区间
     pub fn page_range(&self) -> Range<VirtualPageNumber> {
