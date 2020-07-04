@@ -17,6 +17,7 @@ pub fn init(dtb_pa: PhysicalAddress) {
 ///
 /// 目前只有块设备，可能还有网络、GPU 设备等
 #[derive(Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum DeviceType {
     Block,
 }
