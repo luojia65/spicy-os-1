@@ -9,10 +9,12 @@ mod algo;
 mod mem;
 mod process;
 mod driver;
+// mod fs;
 
 use riscv::register::{scause::Scause, sie, sip, sstatus, time};
 use riscv_sbi::{self as sbi, println};
 use riscv_sbi_rt::{entry, interrupt, pre_init, TrapFrame};
+use crate::process::{Thread, Process, PROCESSOR};
 
 use linked_list_allocator::LockedHeap;
 #[global_allocator]
@@ -113,20 +115,14 @@ fn main(hartid: usize, dtb_pa: usize) {
     // }
 
     driver::init(mem::PhysicalAddress(dtb_pa));
+    // fs::init();
 
-    // 新建一个带有内核映射的进程。需要执行的代码就在内核中
-    let process = process::Process::new_kernel().unwrap();
 
-    for message in 0..8 {
-        println!("message: {}", message);
-        let thread = process::Thread::new(
-            process.clone(),         // 使用同一个进程
-            sample_process as usize, // 入口函数
-            Some(&[message]),        // 参数
-        )
-        .unwrap();
-        process::PROCESSOR.get().add_thread(thread);
-    }
+    let process = Process::new_kernel().unwrap();
+
+    PROCESSOR
+        .get()
+        .add_thread(Thread::new(process.clone(), simple as usize, Some(&[0])).unwrap());
 
     // 把多余的 process 引用丢弃掉
     drop(process);
@@ -149,12 +145,17 @@ fn SupervisorSoft() {
     println!("SupervisorSoft!");
 }
 
-fn sample_process(message: usize) {
-    for i in 0..1000000 {
-        if i % 200000 == 0 {
-            println!("thread {}", message);
-        }
-    }
+/// 测试任何内核线程都可以操作文件系统和驱动
+fn simple(id: usize) {
+    println!("hello from thread id {}", id);
+    // // 新建一个目录
+    // fs::ROOT_INODE
+    //     .create("tmp", rcore_fs::vfs::FileType::Dir, 0o666)
+    //     .expect("failed to mkdir /tmp");
+    // // 输出根文件目录内容
+    // fs::ls("/");
+
+    loop {}
 }
 
 const INTERVAL: u64 = 100000;
@@ -165,7 +166,6 @@ const INTERVAL: u64 = 100000;
 #[export_name = "SupervisorTimer"]
 unsafe extern "C" fn supervisor_timer(context: &mut TrapFrame, scause: Scause, stval: usize) -> *mut TrapFrame {
     static mut TICKS: usize = 0;
-    use crate::process::PROCESSOR;
 
     sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
     TICKS += 1;
