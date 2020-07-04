@@ -8,6 +8,7 @@
 mod algo;
 mod mem;
 mod process;
+mod driver;
 
 use riscv::register::{scause::Scause, sie, sip, sstatus, time};
 use riscv_sbi::{self as sbi, println};
@@ -50,9 +51,9 @@ pub extern "C" fn mp_hook(hartid: usize, _dtb: usize) -> bool {
 }
 
 #[entry]
-fn main(hartid: usize, dtb: usize) {
+fn main(hartid: usize, dtb_pa: usize) {
     println!("Hello, OpenSBI!");
-    println!("hartid={}, dtb={:#x}", hartid, dtb);
+    println!("hartid={}, dtb_pa={:#x}", hartid, dtb_pa);
     println!("spec_version = {:?}", sbi::base::get_spec_version());
     println!("impl_id      = {:?}", sbi::base::get_impl_id());
     println!("impl_version = {:?}", sbi::base::get_impl_version());

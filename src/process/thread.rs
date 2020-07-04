@@ -38,7 +38,7 @@ pub fn new_context(
             ctx.a3 = arguments[3];
         }
         if arguments.len() >= 5 {
-        ctx.a4 = arguments[4];
+            ctx.a4 = arguments[4];
         }
         if arguments.len() >= 6 {
             ctx.a5 = arguments[5];
@@ -55,7 +55,7 @@ pub fn new_context(
     };
     // 设置栈顶指针
     context.sp = stack_top;
-    context.ra = -1isize as usize;
+    context.ra = 0x23336666FA114514;
     // 设置初始参数
     if let Some(args) = arguments {
         set_arguments(&mut context, args);

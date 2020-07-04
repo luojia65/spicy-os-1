@@ -14,6 +14,8 @@ riscv = { version = "0.6", features = ["inline-asm"] }
 bitflags = "1"
 bit_field = "0.10"
 hashbrown = "0.8"
+device_tree = { git = "https://github.com/rcore-os/device_tree-rs" }
+virtio-drivers = { git = "https://github.com/rcore-os/virtio-drivers" }
 
 [dependencies.lazy_static]
 version = "1"
