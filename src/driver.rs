@@ -1,7 +1,7 @@
 use crate::mem::{PhysicalAddress, VirtualAddress};
 
 mod device_tree;
-mod block;
+pub mod block;
 mod virtio;
 
 use riscv_sbi::println;

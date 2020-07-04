@@ -1,6 +1,12 @@
 use lazy_static::lazy_static;
 use alloc::sync::Arc;
-use crate::driver::{DeviceType, DRIVERS};
+use crate::driver::{Driver, DeviceType, DRIVERS, block::BlockDevice};
+use rcore_fs::{dev::block_cache::BlockCache, vfs::*};
+use rcore_fs_sfs::SimpleFileSystem;
+use riscv_sbi::{print, println};
+
+/// 块设备的 Cache 块个数
+pub const BLOCK_CACHE_CAPACITY: usize = 0x10;
 
 lazy_static! {
     /// 根文件系统的根目录的 INode

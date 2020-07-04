@@ -16,6 +16,8 @@ bit_field = "0.10"
 hashbrown = "0.8"
 device_tree = { git = "https://github.com/rcore-os/device_tree-rs" }
 virtio-drivers = { git = "https://github.com/rcore-os/virtio-drivers" }
+rcore-fs = { git = "https://github.com/rcore-os/rcore-fs"}
+rcore-fs-sfs = { git = "https://github.com/rcore-os/rcore-fs"}
 
 [dependencies.lazy_static]
 version = "1"

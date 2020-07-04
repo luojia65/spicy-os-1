@@ -9,7 +9,7 @@ mod algo;
 mod mem;
 mod process;
 mod driver;
-// mod fs;
+mod fs;
 
 use riscv::register::{scause::Scause, sie, sip, sstatus, time};
 use riscv_sbi::{self as sbi, println};
@@ -115,7 +115,7 @@ fn main(hartid: usize, dtb_pa: usize) {
     // }
 
     driver::init(mem::PhysicalAddress(dtb_pa));
-    // fs::init();
+    fs::init();
 
 
     let process = Process::new_kernel().unwrap();
@@ -148,12 +148,12 @@ fn SupervisorSoft() {
 /// 测试任何内核线程都可以操作文件系统和驱动
 fn simple(id: usize) {
     println!("hello from thread id {}", id);
-    // // 新建一个目录
-    // fs::ROOT_INODE
-    //     .create("tmp", rcore_fs::vfs::FileType::Dir, 0o666)
-    //     .expect("failed to mkdir /tmp");
-    // // 输出根文件目录内容
-    // fs::ls("/");
+    // 新建一个目录
+    fs::ROOT_INODE
+        .create("tmp", rcore_fs::vfs::FileType::Dir, 0o666)
+        .expect("failed to mkdir /tmp");
+    // 输出根文件目录内容
+    fs::ls("/");
 
     loop {}
 }

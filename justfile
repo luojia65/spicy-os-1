@@ -3,6 +3,11 @@ mode := "debug"
 kernel_file := "target/" + target + "/" + mode + "/spicy-os"
 bin_file := "target/" + target + "/" + mode + "/kernel.bin"
 
+# USER_DIR	:= ../user
+# USER_BUILD	:= $(USER_DIR)/build
+# IMG_FILE	:= $(USER_BUILD)/disk.img
+img_file := "disk/disk.img"
+
 # objdump := "rust-objdump --arch-name=riscv64"
 objdump := "riscv64-unknown-elf-objdump"
 objcopy := "rust-objcopy --binary-architecture=riscv64"
@@ -21,6 +26,8 @@ qemu: build
             -nographic \
             -bios default \
             -device loader,file={{bin_file}},addr=0x80200000 \
+    		-drive file={{img_file}},format=qcow2,id=sfs \
+    		-device virtio-blk-device,drive=sfs \
             -smp threads=1
 
 run: build qemu
