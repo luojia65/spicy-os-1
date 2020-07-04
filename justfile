@@ -1,12 +1,9 @@
 target := "riscv64imac-unknown-none-elf"
 mode := "debug"
-kernel_file := "target/" + target + "/" + mode + "/spicy-os"
-bin_file := "target/" + target + "/" + mode + "/kernel.bin"
+kernel_file := "../target/" + target + "/" + mode + "/spicy-os"
+bin_file := "../target/" + target + "/" + mode + "/kernel.bin"
 
-# USER_DIR	:= ../user
-# USER_BUILD	:= $(USER_DIR)/build
-# IMG_FILE	:= $(USER_BUILD)/disk.img
-img_file := "disk/disk.img"
+img_file := "../build/qcow.disk.img"
 
 # objdump := "rust-objdump --arch-name=riscv64"
 objdump := "riscv64-unknown-elf-objdump"
