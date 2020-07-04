@@ -1,3 +1,6 @@
+mod virtio_mmio;
+mod virtio_blk;
+
 use device_tree::{util::SliceRead, Node};
 use virtio_drivers::{DeviceType, VirtIOHeader};
 use crate::mem::{PhysicalAddress, VirtualAddress};
@@ -5,6 +8,7 @@ use riscv_sbi::println;
 
 /// 从设备树的某个节点探测 virtio 协议具体类型
 pub fn virtio_probe(node: &Node) {
+    // println!("{:x?}", node);
     // reg 属性中包含了描述设备的 Header 的位置
     let reg = match node.prop_raw("reg") {
         Some(reg) => reg,

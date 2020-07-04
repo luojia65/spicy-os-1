@@ -112,6 +112,8 @@ fn main(hartid: usize, dtb_pa: usize) {
     //     llvm_asm!("ebreak"::::"volatile");
     // }
 
+    driver::init(mem::PhysicalAddress(dtb_pa));
+
     // 新建一个带有内核映射的进程。需要执行的代码就在内核中
     let process = process::Process::new_kernel().unwrap();
 

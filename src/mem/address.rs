@@ -10,6 +10,11 @@ pub const PAGE_SIZE: usize = 4096;
 /// 内核使用线性映射的偏移量
 pub const KERNEL_MAP_OFFSET: usize = 0xffff_ffff_0000_0000;
 
+/// MMIO 设备段内存区域起始地址
+pub const DEVICE_START_ADDRESS: PhysicalAddress = PhysicalAddress(0x1000_0000);
+/// MMIO 设备段内存区域结束地址
+pub const DEVICE_END_ADDRESS: PhysicalAddress = PhysicalAddress(0x1001_0000);
+
 /// 虚拟地址
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]

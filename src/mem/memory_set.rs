@@ -44,7 +44,12 @@ impl MemorySet {
 
         // 建立字段
         let segments = vec![
-            // todo device segment
+            // DEVICE 段，rw-
+            Segment {
+                map_type: MapType::Linear,
+                range: DEVICE_START_ADDRESS.into()..DEVICE_END_ADDRESS.into(),
+                flags: Flags::READABLE | Flags::WRITABLE,
+            },
             // .text 段，r-x
             Segment {
                 map_type: MapType::Linear,
