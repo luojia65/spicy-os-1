@@ -20,27 +20,42 @@ pub fn new_context(
     arguments: Option<&[usize]>,
     is_user: bool,
 ) -> Context {
-    pub fn set_sp(ctx: &mut Context, value: usize) {
-        ctx.x[2] = value;
-    }
-    pub fn set_ra(ctx: &mut Context, value: usize) {
-        ctx.x[1] = value;
-    }
     /// 按照函数调用规则写入参数
     ///
     /// 没有考虑一些特殊情况，例如超过 8 个参数，或 struct 空间展开
     pub fn set_arguments(ctx: &mut Context, arguments: &[usize]) {
         assert!(arguments.len() <= 8);
-        ctx.x[10..(10 + arguments.len())].copy_from_slice(arguments);
+        if arguments.len() >= 1 {
+            ctx.a0 = arguments[0];
+        }
+        if arguments.len() >= 2 {
+            ctx.a1 = arguments[1];
+        }
+        if arguments.len() >= 3 {
+            ctx.a2 = arguments[2];
+        }
+        if arguments.len() >= 4 {
+            ctx.a3 = arguments[3];
+        }
+        if arguments.len() >= 5 {
+        ctx.a4 = arguments[4];
+        }
+        if arguments.len() >= 6 {
+            ctx.a5 = arguments[5];
+        }
+        if arguments.len() >= 7 {
+            ctx.a6 = arguments[6];
+        }
+        if arguments.len() >= 8 {
+            ctx.a7 = arguments[7];
+        }
     }
     let mut context = riscv_sbi_rt::TrapFrame {
-        x: [0; 32],
-        sepc: 0,
-        sstatus: unsafe { core::mem::MaybeUninit::zeroed().assume_init() }
+        ..unsafe { core::mem::MaybeUninit::zeroed().assume_init() }
     };
     // 设置栈顶指针
-    set_sp(&mut context, stack_top);
-    set_ra(&mut context, -1isize as usize);
+    context.sp = stack_top;
+    context.ra = -1isize as usize;
     // 设置初始参数
     if let Some(args) = arguments {
         set_arguments(&mut context, args);
@@ -147,7 +162,7 @@ impl Thread {
             KERNEL_STACK.push_context(parked_frame)
         } else {
             // 内核线程则将 Context 放至 sp 下
-            let context = (parked_frame.x[2] - size_of::<Context>()) as *mut Context;
+            let context = (parked_frame.sp - size_of::<Context>()) as *mut Context;
             unsafe { *context = parked_frame };
             context
         }
