@@ -127,8 +127,8 @@ impl MemorySet {
 
     /// 检测一段内存区域和已有的是否存在重叠区域
     pub fn overlap_with(&self, range: Range<VirtualPageNumber>) -> bool {
-        fn range_overlap<T: core::cmp::Ord + Copy>(a: &Range<T>, b: &Range<T>) -> bool {
-            T::min(a.end, b.end) > T::max(a.start, b.start)
+        fn range_overlap<T: core::cmp::Ord>(a: &Range<T>, b: &Range<T>) -> bool {
+            <&T>::min(&a.end, &b.end) > <&T>::max(&a.start, &b.start)
         }
         for seg in self.segments.iter() {
             if range_overlap(&range, &seg.page_range()) {
@@ -136,6 +136,7 @@ impl MemorySet {
                 return true;
             }
         }
+        riscv_sbi::println!("No overlap! {:?}", &range);
         false
     }
 

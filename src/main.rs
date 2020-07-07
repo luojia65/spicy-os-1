@@ -119,7 +119,15 @@ fn main(hartid: usize, dtb_pa: usize) {
 
     let process = Process::new_kernel().unwrap();
 
-    start_user_thread("hello-world");
+    // start_user_thread("hello-world");
+    for message in 0..1 {
+        let thread = Thread::new(
+            process.clone(),            // 使用同一个进程
+            sample_process as usize,    // 入口函数
+            Some(&[message]),           // 参数
+        ).unwrap();
+        PROCESSOR.get().add_thread(thread);
+    }
 
     // 把多余的 process 引用丢弃掉
     drop(process);
@@ -140,6 +148,14 @@ fn main(hartid: usize, dtb_pa: usize) {
 #[interrupt]
 fn SupervisorSoft() {
     println!("SupervisorSoft!");
+}
+
+fn sample_process(message: usize) {
+    for i in 0..1000000 {
+        if i % 200000 == 0 {
+            println!("thread {}", message);
+        }
+    }
 }
 
 fn start_user_thread(app_name: &str) {
@@ -178,7 +194,7 @@ unsafe extern "C" fn supervisor_timer(
         println!("100 ticks~");
     }
 
-    PROCESSOR.get().tick(context)
+    PROCESSOR.get().prepare_next_thread(context)
 }
 
 #[export_name = "ExceptionHandler"]

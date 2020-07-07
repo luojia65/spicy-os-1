@@ -65,8 +65,11 @@ impl Processor {
         extern "C" {
             fn __restore(context: usize);
         }
+        if self.current_thread.is_none() {
+            panic!("no thread to run, shutting down");
+        }
         // 从 current_thread 中取出 Context
-        let context = self.current_thread().run();
+        let context = self.current_thread().prepare();
         // 从此将没有回头
         unsafe {
             __restore(context as usize);
@@ -75,21 +78,24 @@ impl Processor {
     }
 
     /// 在一个时钟中断时，替换掉 context
-    pub fn tick(&mut self, context: &mut TrapFrame) -> *mut TrapFrame {
+    pub fn prepare_next_thread(&mut self, context: &mut TrapFrame) -> *mut TrapFrame {
         // 向调度器询问下一个线程
         if let Some(next_thread) = self.scheduler.get_next() {
-            if next_thread == self.current_thread() {
-                // 没有更换线程，直接返回 Context
-                context
-            } else {
-                // 准备下一个线程
-                let next_context = next_thread.run();
-                let current_thread = self.current_thread.replace(next_thread).unwrap();
-                // 储存当前线程 Context
-                current_thread.park(context.clone());
-                // 返回下一个线程的 Context
-                next_context
-            }
+            // if next_thread == self.current_thread() {
+            //     // 没有更换线程，直接返回 Context
+            //     context
+            // } else {
+            //     // 准备下一个线程
+            //     let next_context = next_thread.prepare();
+            //     let current_thread = self.current_thread.replace(next_thread).unwrap();
+            //     // 储存当前线程 Context
+            //     current_thread.park(context.clone());
+            //     // 返回下一个线程的 Context
+            //     next_context
+            // }
+            let context = next_thread.prepare();
+            self.current_thread = Some(next_thread);
+            return context;
         } else {
             panic!("all threads terminated, shutting down");
         }

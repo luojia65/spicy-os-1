@@ -3,7 +3,6 @@ use super::STACK_SIZE;
 use crate::mem::{Flags, MemoryResult, VirtualAddress};
 use crate::process::Process;
 use alloc::sync::Arc;
-use core::mem::size_of;
 use core::ops::Range;
 use riscv::register::sstatus;
 use spin::{Mutex, RwLock};
@@ -151,21 +150,13 @@ impl Thread {
     /// 准备执行一个线程
     ///
     /// 激活对应进程的页表，并返回其 Context
-    pub fn run(&self) -> *mut Context {
+    pub fn prepare(&self) -> *mut Context {
         // 激活页表
         self.process.read().memory_set.activate();
         // 取出 Context
         let parked_frame = self.context.lock().take().unwrap();
-
-        if self.process.read().is_user {
-            // 用户线程则将 Context 放至内核栈顶
-            KERNEL_STACK.push_context(parked_frame)
-        } else {
-            // 内核线程则将 Context 放至 sp 下
-            let context = (parked_frame.sp - size_of::<Context>()) as *mut Context;
-            unsafe { *context = parked_frame };
-            context
-        }
+        // 将 Context 放至内核栈顶
+        unsafe { KERNEL_STACK.push_context(parked_frame) }
     }
 
     /// 发生时钟中断后暂停线程，保存状态
