@@ -159,13 +159,13 @@ fn SupervisorSoft() {
     println!("SupervisorSoft!");
 }
 
-fn sample_process(message: usize) {
-    for i in 0..1000000 {
-        if i % 200000 == 0 {
-            println!("thread {}", message);
-        }
-    }
-}
+// fn sample_process(message: usize) {
+//     for i in 0..1000000 {
+//         if i % 200000 == 0 {
+//             println!("thread {}", message);
+//         }
+//     }
+// }
 
 fn start_user_thread(app_name: &str) {
     use crate::fs::*;

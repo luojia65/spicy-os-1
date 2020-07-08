@@ -1,9 +1,9 @@
-use volatile::Volatile;
+// use volatile::Volatile;
 
-#[repr(C)]
-#[derive(Debug)]
-struct Ns16550a {
+// #[repr(C)]
+// #[derive(Debug)]
+// struct Ns16550a {
 
-}
+// }
 
-// todo
+// // todo

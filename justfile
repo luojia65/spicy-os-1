@@ -45,7 +45,6 @@ debug: build
     		-device virtio-blk-device,drive=sfs \
             -smp threads=1 \
             -gdb tcp::1234 -S
+            
 gdb: 
     @gdb --eval-command="file {{kernel_file}}" --eval-command="target remote localhost:1234"
-
-    

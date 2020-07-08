@@ -1,4 +1,3 @@
-use riscv_sbi_rt::TrapFrame as Context;
 use crate::PROCESSOR;
 use super::syscall::*;
 use rcore_fs::vfs::INode;
