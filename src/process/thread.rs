@@ -6,6 +6,7 @@ use alloc::sync::Arc;
 use core::ops::Range;
 use riscv::register::sstatus;
 use spin::{Mutex, RwLock};
+use core::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct ThreadId(usize);
@@ -97,21 +98,42 @@ pub fn new_context(
 /// 线程的信息
 pub struct Thread {
     /// 线程 ID
-    pub id: ThreadId,
+    id: ThreadId,
     /// 线程的栈
-    pub stack: Range<VirtualAddress>,
+    stack: Range<VirtualAddress>,
+    /// 用 `Mutex` 包装一些可变的变量
+    inner: Mutex<ThreadInner>,
+    /// 所属的进程
+    process: Arc<RwLock<Process>>,
+}
+
+#[derive(Debug)]
+struct ThreadInner {
     /// 线程执行上下文
     ///
     /// 当且仅当线程被暂停执行时，`context` 为 `Some`
-    pub context: Mutex<Option<Context>>,
-    /// 所属的进程
-    pub process: Arc<RwLock<Process>>,
+    context: Option<Context>,
+    // 占用的资源等等
 }
 
 /// 通过线程 ID 来判等
 impl PartialEq for Thread {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
+    }
+}
+
+/// 通过线程 ID 来判等
+///
+/// 在 Rust 中，[`PartialEq`] trait 不要求任意对象 `a` 满足 `a == a`。
+/// 将类型标注为 [`Eq`]，会沿用 `PartialEq` 中定义的 `eq()` 方法，
+/// 同时声明对于任意对象 `a` 满足 `a == a`。
+impl Eq for Thread {}
+
+/// 通过线程 ID 来哈希
+impl Hash for Thread {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_usize(self.id.0);
     }
 }
 
@@ -145,10 +167,20 @@ impl Thread {
             },
             stack,
             process,
-            context: Mutex::new(Some(context)),
+            inner: Mutex::new(ThreadInner { 
+                context: Some(context),
+            })
         });
 
         Ok(thread)
+    }
+
+    pub fn thread_id(&self) -> ThreadId {
+        self.id
+    }
+
+    fn inner(&self) -> spin::MutexGuard<ThreadInner> {
+        self.inner.lock()
     }
 
     /// 准备执行一个线程
@@ -158,7 +190,7 @@ impl Thread {
         // 激活页表
         self.process.read().memory_set.activate();
         // 取出 Context
-        let parked_frame = self.context.lock().take().unwrap();
+        let parked_frame = self.inner().context.take().unwrap();
         
         if self.process.read().is_user {
             // 用户线程则将 Context 放至内核栈顶
@@ -174,7 +206,7 @@ impl Thread {
     /// 发生时钟中断后暂停线程，保存状态
     pub fn park(&self, context: Context) {
         // 检查目前线程内的 context 应当为 None
-        let mut slot = self.context.lock();
+        let slot = &mut self.inner().context;
         assert!(slot.is_none());
         // 将 Context 保存到线程中
         slot.replace(context);

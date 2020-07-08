@@ -2,6 +2,7 @@ use crate::algo::Scheduler;
 use crate::algo::SchedulerImpl;
 use crate::process::Thread;
 use alloc::sync::Arc;
+use hashbrown::HashSet;
 use lazy_static::lazy_static;
 use riscv_sbi_rt::TrapFrame;
 use riscv_sbi::println;
@@ -52,6 +53,8 @@ pub struct Processor {
     current_thread: Option<Arc<Thread>>,
     /// 线程调度器，记录所有线程
     scheduler: SchedulerImpl<Arc<Thread>>,
+    /// 保存休眠线程
+    sleeping_threads: HashSet<Arc<Thread>>,
 }
 
 impl Processor {
@@ -80,27 +83,32 @@ impl Processor {
 
     /// 在一个时钟中断时，替换掉 context
     pub fn prepare_next_thread(&mut self, context: &mut TrapFrame) -> *mut TrapFrame {
-        // 向调度器询问下一个线程
-        if let Some(next_thread) = self.scheduler.get_next() {
-            if next_thread == self.current_thread() {
-                // 没有更换线程，直接返回 Context
-                context
+        loop {
+            // 向调度器询问下一个线程
+            if let Some(next_thread) = self.scheduler.get_next() {
+                if next_thread == self.current_thread() {
+                    // 没有更换线程，直接返回 Context
+                    return context;
+                } else {
+                    // 准备下一个线程
+                    let next_context = next_thread.prepare();
+                    let current_thread = self.current_thread.replace(next_thread).unwrap();
+                    // 储存当前线程 Context
+                    current_thread.park(context.clone());
+                    // 返回下一个线程的 Context
+                    return next_context;
+                }
             } else {
-                // 准备下一个线程
-                let next_context = next_thread.prepare();
-                let current_thread = self.current_thread.replace(next_thread).unwrap();
-                // 储存当前线程 Context
-                current_thread.park(context.clone());
-                // 返回下一个线程的 Context
-                next_context
+                // 没有活跃线程
+                if self.sleeping_threads.is_empty() {
+                    // 没有休眠线程，退出
+                    println!("[Kernel] All threads terminated, shutting down");
+                    riscv_sbi::legacy::shutdown()
+                } else {
+                    // 有休眠线程，等待中断
+                    unsafe { riscv::asm::wfi() }
+                }
             }
-            // let next_context = next_thread.prepare();
-            // let current_thread = self.current_thread.replace(next_thread).unwrap();
-            // current_thread.park(context.clone());
-            // next_context
-        } else {
-            println!("[Kernel] All threads terminated, shutting down");
-            riscv_sbi::legacy::shutdown();
         }
     }
 
@@ -111,6 +119,26 @@ impl Processor {
         }
         // riscv_sbi::println!("[add_thread] add {:x?}", thread);
         self.scheduler.add_thread(thread, 0);
+    }
+
+    /// 唤醒一个休眠线程
+    pub fn wake_thread(&mut self, thread: Arc<Thread>) {
+        self.sleeping_threads.remove(&thread);
+        self.scheduler.add_thread(thread, 0);
+    }
+
+    /// 保存当前线程的 `Context`
+    pub fn park_current_thread(&mut self, context: &TrapFrame) {
+        self.current_thread().park(*context);
+    }
+
+    /// 令当前线程进入休眠
+    pub fn sleep_current_thread(&mut self) {
+        // 从 current_thread 中取出
+        let current_thread = self.current_thread();
+        // 从 scheduler 移出到 sleeping_threads 中
+        self.scheduler.remove_thread(&current_thread);
+        self.sleeping_threads.insert(current_thread);
     }
 
     /// 终止当前的线程

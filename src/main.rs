@@ -226,7 +226,7 @@ pub fn handle_exception(
     if scause.cause() == Trap::Exception(Exception::UserEnvCall) {
         // println!("Syscall at 0x{:x}", trap_frame.sepc);
         println!("{:x?}", trap_frame);
-        return kernel::syscall_handler(trap_frame);
+        return kernel::syscall::syscall_handler(trap_frame);
     }
     trap_frame as *mut _
 }
