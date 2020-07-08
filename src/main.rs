@@ -10,6 +10,7 @@ mod driver;
 mod fs;
 mod mem;
 mod process;
+mod kernel;
 
 use crate::process::{Process, Thread, PROCESSOR};
 use riscv::register::{scause::Scause, sie, sip, time};
@@ -119,8 +120,16 @@ fn main(hartid: usize, dtb_pa: usize) {
 
     let process = Process::new_kernel().unwrap();
 
+    for message in 0..4 {
+        let thread = Thread::new(
+            process.clone(),            // 使用同一个进程
+            sample_process as usize,    // 入口函数
+            Some(&[message]),           // 参数
+        ).unwrap();
+        PROCESSOR.get().add_thread(thread);
+    }
     start_user_thread("hello-world");
-    for message in 0..8 {
+    for message in 5..8 {
         let thread = Thread::new(
             process.clone(),            // 使用同一个进程
             sample_process as usize,    // 入口函数
@@ -213,6 +222,10 @@ pub fn handle_exception(
     if scause.cause() == Trap::Exception(Exception::Breakpoint) {
         println!("Breakpoint at 0x{:x}", trap_frame.sepc);
         trap_frame.sepc += 2;
+    }
+    if scause.cause() == Trap::Exception(Exception::UserEnvCall) {
+        // println!("Syscall at 0x{:x}", trap_frame.sepc);
+        return kernel::syscall_handler(trap_frame);
     }
     trap_frame as *mut _
 }

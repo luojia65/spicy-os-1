@@ -110,4 +110,12 @@ impl Processor {
         // riscv_sbi::println!("[add_thread] add {:x?}", thread);
         self.scheduler.add_thread(thread, 0);
     }
+
+    /// 终止当前的线程
+    pub fn kill_current_thread(&mut self) {
+        assert!(!self.current_thread.is_none());
+        // 从调度器中移除
+        let thread = self.current_thread.take().unwrap();
+        self.scheduler.remove_thread(&thread);
+    }
 }
