@@ -26,15 +26,13 @@ fn module_process(context: &mut Context) -> *mut Context {
 
 fn function_process_exit(context: &mut Context) -> *mut Context {
     let code = context.a2;
-    // println!("code: {}", code);
-    // let thread_id = PROCESSOR.get().current_thread().id;
-    // println!("id: {:?}", thread_id);
+    let thread_id = PROCESSOR.get().current_thread().id;
     PROCESSOR.get().kill_current_thread();
-    let ans = PROCESSOR.get().prepare_next_thread(context);
     println!(
-        "[Kernel] Thread exited with code {}",
-        // thread_id,
+        "[Kernel] Thread {:?} exited with code {}",
+        thread_id,
         code
     );
-    ans
+    // 这一行必须放在最后
+    PROCESSOR.get().prepare_next_thread(context)
 }

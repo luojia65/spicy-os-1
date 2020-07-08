@@ -4,6 +4,7 @@ use crate::process::Thread;
 use alloc::sync::Arc;
 use lazy_static::lazy_static;
 use riscv_sbi_rt::TrapFrame;
+use riscv_sbi::println;
 
 mod unsafe_wrapper {
     use core::cell::UnsafeCell;
@@ -98,7 +99,8 @@ impl Processor {
             // current_thread.park(context.clone());
             // next_context
         } else {
-            panic!("all threads terminated, shutting down");
+            println!("[Kernel] All threads terminated, shutting down");
+            riscv_sbi::legacy::shutdown();
         }
     }
 

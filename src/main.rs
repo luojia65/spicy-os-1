@@ -118,28 +118,28 @@ fn main(hartid: usize, dtb_pa: usize) {
     driver::init(mem::PhysicalAddress(dtb_pa));
     fs::init();
 
-    let process = Process::new_kernel().unwrap();
+    // let process = Process::new_kernel().unwrap();
 
-    for message in 0..4 {
-        let thread = Thread::new(
-            process.clone(),            // 使用同一个进程
-            sample_process as usize,    // 入口函数
-            Some(&[message]),           // 参数
-        ).unwrap();
-        PROCESSOR.get().add_thread(thread);
-    }
+    // for message in 0..4 {
+    //     let thread = Thread::new(
+    //         process.clone(),            // 使用同一个进程
+    //         sample_process as usize,    // 入口函数
+    //         Some(&[message]),           // 参数
+    //     ).unwrap();
+    //     PROCESSOR.get().add_thread(thread);
+    // }
     start_user_thread("hello-world");
-    for message in 5..8 {
-        let thread = Thread::new(
-            process.clone(),            // 使用同一个进程
-            sample_process as usize,    // 入口函数
-            Some(&[message]),           // 参数
-        ).unwrap();
-        PROCESSOR.get().add_thread(thread);
-    }
+    // for message in 5..8 {
+    //     let thread = Thread::new(
+    //         process.clone(),            // 使用同一个进程
+    //         sample_process as usize,    // 入口函数
+    //         Some(&[message]),           // 参数
+    //     ).unwrap();
+    //     PROCESSOR.get().add_thread(thread);
+    // }
 
     // 把多余的 process 引用丢弃掉
-    drop(process);
+    // drop(process);
 
     unsafe {
         // 开启 STIE，允许时钟中断
@@ -225,6 +225,7 @@ pub fn handle_exception(
     }
     if scause.cause() == Trap::Exception(Exception::UserEnvCall) {
         // println!("Syscall at 0x{:x}", trap_frame.sepc);
+        println!("{:x?}", trap_frame);
         return kernel::syscall_handler(trap_frame);
     }
     trap_frame as *mut _
