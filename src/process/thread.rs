@@ -3,17 +3,20 @@ use super::STACK_SIZE;
 use crate::mem::{Flags, MemoryResult, VirtualAddress};
 use crate::process::Process;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
+use alloc::vec;
 use core::ops::Range;
 use riscv::register::sstatus;
 use spin::{Mutex, RwLock};
 use core::hash::{Hash, Hasher};
+use rcore_fs::vfs::INode;
+use crate::fs::STDOUT;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct ThreadId(usize);
 
 type Context = riscv_sbi_rt::TrapFrame;
 
-#[derive(Debug)]
 /// 线程的信息
 pub struct Thread {
     /// 线程 ID
@@ -26,13 +29,15 @@ pub struct Thread {
     process: Arc<RwLock<Process>>,
 }
 
-#[derive(Debug)]
-struct ThreadInner {
+// todo: private
+pub struct ThreadInner {
     /// 线程执行上下文
     ///
     /// 当且仅当线程被暂停执行时，`context` 为 `Some`
     context: Option<Context>,
     // 占用的资源等等
+    /// 打开的文件
+    pub descriptors: Vec<Arc<dyn INode>>,
 }
 
 /// 通过线程 ID 来判等
@@ -88,6 +93,7 @@ impl Thread {
             process,
             inner: Mutex::new(ThreadInner { 
                 context: Some(context),
+                descriptors: vec![STDOUT.clone()],
             })
         });
 
@@ -102,7 +108,7 @@ impl Thread {
         self.process.clone()
     }
 
-    fn inner(&self) -> spin::MutexGuard<ThreadInner> {
+    pub fn inner(&self) -> spin::MutexGuard<ThreadInner> {
         self.inner.lock()
     }
 

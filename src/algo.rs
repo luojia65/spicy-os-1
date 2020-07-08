@@ -105,7 +105,7 @@ mod fifo_scheduler {
         }
     }
 
-    impl<ThreadType: Clone + PartialEq + core::fmt::Debug> Scheduler<ThreadType>
+    impl<ThreadType: Clone + PartialEq> Scheduler<ThreadType>
         for FifoScheduler<ThreadType>
     {
         fn add_thread<T>(&mut self, thread: ThreadType, _priority: T) {

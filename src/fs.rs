@@ -1,5 +1,7 @@
 mod inode_ext;
+mod stdout;
 pub use inode_ext::*;
+pub use stdout::*;
 
 use crate::driver::{block::BlockDevice, DeviceType, DRIVERS};
 use alloc::sync::Arc;
