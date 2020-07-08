@@ -55,7 +55,10 @@ pub fn new_context(
     // 设置栈顶指针
     context.sp = stack_top;
     riscv_sbi::println!("SP: {:016x}", context.sp);
-    context.ra = 0x23336666FA114514;
+    pub fn bottom_ra_called() {
+        riscv_sbi::println!("You shouldn't call this function")
+    }
+    context.ra = bottom_ra_called as usize;
     // 设置初始参数
     if let Some(args) = arguments {
         set_arguments(&mut context, args);

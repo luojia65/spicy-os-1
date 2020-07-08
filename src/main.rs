@@ -119,7 +119,7 @@ fn main(hartid: usize, dtb_pa: usize) {
 
     let process = Process::new_kernel().unwrap();
 
-    // start_user_thread("hello-world");
+    start_user_thread("hello-world");
     for message in 0..8 {
         let thread = Thread::new(
             process.clone(),            // 使用同一个进程

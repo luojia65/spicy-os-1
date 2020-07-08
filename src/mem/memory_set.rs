@@ -64,7 +64,7 @@ impl MemorySet {
             Segment {
                 map_type: MapType::Linear,
                 range: (_srodata as usize).into()..(_erodata as usize).into(),
-                flags: Flags::READABLE,
+                flags: Flags::READABLE | Flags::WRITABLE,
             },
             // .data 段，rw-
             Segment {
