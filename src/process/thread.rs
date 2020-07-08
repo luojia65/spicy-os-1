@@ -13,87 +13,6 @@ pub struct ThreadId(usize);
 
 type Context = riscv_sbi_rt::TrapFrame;
 
-/// 为线程构建初始 `Context`
-pub fn new_context(
-    stack_top: usize,
-    entry_point: usize,
-    arguments: Option<&[usize]>,
-    is_user: bool,
-) -> Context {
-    /// 按照函数调用规则写入参数
-    ///
-    /// 没有考虑一些特殊情况，例如超过 8 个参数，或 struct 空间展开
-    pub fn set_arguments(ctx: &mut Context, arguments: &[usize]) {
-        assert!(arguments.len() <= 8);
-        if arguments.len() >= 1 {
-            ctx.a0 = arguments[0];
-        }
-        if arguments.len() >= 2 {
-            ctx.a1 = arguments[1];
-        }
-        if arguments.len() >= 3 {
-            ctx.a2 = arguments[2];
-        }
-        if arguments.len() >= 4 {
-            ctx.a3 = arguments[3];
-        }
-        if arguments.len() >= 5 {
-            ctx.a4 = arguments[4];
-        }
-        if arguments.len() >= 6 {
-            ctx.a5 = arguments[5];
-        }
-        if arguments.len() >= 7 {
-            ctx.a6 = arguments[6];
-        }
-        if arguments.len() >= 8 {
-            ctx.a7 = arguments[7];
-        }
-    }
-    let mut context = riscv_sbi_rt::TrapFrame {
-        ..unsafe { core::mem::MaybeUninit::zeroed().assume_init() }
-    };
-    // 设置栈顶指针
-    context.sp = stack_top;
-    riscv_sbi::println!("SP: {:016x}", context.sp);
-    pub fn bottom_ra_called() {
-        riscv_sbi::println!("You shouldn't call this function")
-    }
-    context.ra = bottom_ra_called as usize;
-    // 设置初始参数
-    if let Some(args) = arguments {
-        set_arguments(&mut context, args);
-    }
-    // 设置入口地址
-    context.sepc = entry_point;
-    // 设置 sstatus
-    context.sstatus = sstatus::read();
-    if is_user {
-        // context.sstatus.set_spp(User);
-        unsafe {
-            let mut a: usize = core::mem::transmute(context.sstatus);
-            a &= !(1 << 8);
-            context.sstatus = core::mem::transmute(a);
-        }
-    } else {
-        // context.sstatus.set_spp(Supervisor);
-        unsafe {
-            let mut a: usize = core::mem::transmute(context.sstatus);
-            a |= 1 << 8;
-            context.sstatus = core::mem::transmute(a);
-        }
-    }
-    // 这样设置 SPIE 位，使得替换 sstatus 后关闭中断，
-    // 而在 sret 到用户线程时开启中断。详见 SPIE 和 SIE 的定义
-    // context.sstatus.set_spie();
-    unsafe {
-        let mut a: usize = core::mem::transmute(context.sstatus);
-        a |= 1 << 5;
-        context.sstatus = core::mem::transmute(a);
-    }
-    context
-}
-
 #[derive(Debug)]
 /// 线程的信息
 pub struct Thread {
@@ -179,6 +98,10 @@ impl Thread {
         self.id
     }
 
+    pub fn process(&self) -> Arc<RwLock<Process>> {
+        self.process.clone()
+    }
+
     fn inner(&self) -> spin::MutexGuard<ThreadInner> {
         self.inner.lock()
     }
@@ -211,4 +134,85 @@ impl Thread {
         // 将 Context 保存到线程中
         slot.replace(context);
     }
+}
+
+/// 为线程构建初始 `Context`
+pub fn new_context(
+    stack_top: usize,
+    entry_point: usize,
+    arguments: Option<&[usize]>,
+    is_user: bool,
+) -> Context {
+    /// 按照函数调用规则写入参数
+    ///
+    /// 没有考虑一些特殊情况，例如超过 8 个参数，或 struct 空间展开
+    pub fn set_arguments(ctx: &mut Context, arguments: &[usize]) {
+        assert!(arguments.len() <= 8);
+        if arguments.len() >= 1 {
+            ctx.a0 = arguments[0];
+        }
+        if arguments.len() >= 2 {
+            ctx.a1 = arguments[1];
+        }
+        if arguments.len() >= 3 {
+            ctx.a2 = arguments[2];
+        }
+        if arguments.len() >= 4 {
+            ctx.a3 = arguments[3];
+        }
+        if arguments.len() >= 5 {
+            ctx.a4 = arguments[4];
+        }
+        if arguments.len() >= 6 {
+            ctx.a5 = arguments[5];
+        }
+        if arguments.len() >= 7 {
+            ctx.a6 = arguments[6];
+        }
+        if arguments.len() >= 8 {
+            ctx.a7 = arguments[7];
+        }
+    }
+    let mut context = riscv_sbi_rt::TrapFrame {
+        ..unsafe { core::mem::MaybeUninit::zeroed().assume_init() }
+    };
+    // 设置栈顶指针
+    context.sp = stack_top;
+    riscv_sbi::println!("SP: {:016x}", context.sp);
+    pub fn bottom_ra_called() {
+        riscv_sbi::println!("You shouldn't call this function")
+    }
+    context.ra = bottom_ra_called as usize;
+    // 设置初始参数
+    if let Some(args) = arguments {
+        set_arguments(&mut context, args);
+    }
+    // 设置入口地址
+    context.sepc = entry_point;
+    // 设置 sstatus
+    context.sstatus = sstatus::read();
+    if is_user {
+        // context.sstatus.set_spp(User);
+        unsafe {
+            let mut a: usize = core::mem::transmute(context.sstatus);
+            a &= !(1 << 8);
+            context.sstatus = core::mem::transmute(a);
+        }
+    } else {
+        // context.sstatus.set_spp(Supervisor);
+        unsafe {
+            let mut a: usize = core::mem::transmute(context.sstatus);
+            a |= 1 << 8;
+            context.sstatus = core::mem::transmute(a);
+        }
+    }
+    // 这样设置 SPIE 位，使得替换 sstatus 后关闭中断，
+    // 而在 sret 到用户线程时开启中断。详见 SPIE 和 SIE 的定义
+    // context.sstatus.set_spie();
+    unsafe {
+        let mut a: usize = core::mem::transmute(context.sstatus);
+        a |= 1 << 5;
+        context.sstatus = core::mem::transmute(a);
+    }
+    context
 }

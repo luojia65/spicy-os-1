@@ -16,6 +16,16 @@ use core::ops::Range;
 use spin::RwLock;
 use xmas_elf::ElfFile;
 
+#[derive(Clone, Copy, Debug)]
+pub struct ProcessId(pub u32);
+
+fn next_process_id() -> ProcessId {
+    static mut PROCESS_COUNTER: u32 = 0;
+    let ans = unsafe { PROCESS_COUNTER };
+    unsafe { PROCESS_COUNTER += 1 };
+    ProcessId(ans)
+}
+
 #[derive(Debug)]
 /// 进程的信息
 pub struct Process {
@@ -23,6 +33,8 @@ pub struct Process {
     pub is_user: bool,
     /// 进程中的线程公用页表 / 内存映射
     pub memory_set: MemorySet,
+    // id
+    id: ProcessId,
 }
 
 impl Process {
@@ -31,6 +43,7 @@ impl Process {
         Ok(Arc::new(RwLock::new(Self {
             is_user: false,
             memory_set: MemorySet::new_kernel()?,
+            id: next_process_id(),
         })))
     }
 
@@ -39,7 +52,13 @@ impl Process {
         Ok(Arc::new(RwLock::new(Self {
             is_user,
             memory_set: MemorySet::from_elf(file, is_user)?,
+            id: next_process_id(),
         })))
+    }
+
+    /// 得到进程编号
+    pub fn process_id(&self) -> ProcessId { 
+        self.id
     }
 
     /// 分配一定数量的连续虚拟空间
