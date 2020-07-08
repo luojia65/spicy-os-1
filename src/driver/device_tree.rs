@@ -1,6 +1,7 @@
 use crate::mem::VirtualAddress;
 use core::slice;
 use device_tree::{DeviceTree, Node};
+use riscv_sbi::println;
 
 const DEVICE_TREE_MAGIC: u32 = 0xd00d_feed;
 
@@ -12,6 +13,8 @@ fn walk(node: &Node) {
             super::virtio::virtio_probe(node);
         }
     }
+    println!("Name: {}; Compatible: {:?}", node.name, node.prop_str("compatible"));
+
     // 遍历子树
     for child in node.children.iter() {
         walk(child);
