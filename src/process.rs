@@ -72,7 +72,8 @@ impl Process {
             },
             None,
         )?;
-        riscv_sbi::println!("range: {:?}", range);
+        // riscv_sbi::println!("range: {:?}", range);
+        // riscv_sbi::println!("Memory set: {:?}", self.memory_set);
         // 返回地址区间（使用参数 size，而非向上取整的 alloc_size）
         Ok(Range::from(range.start..(range.start + size)))
     }

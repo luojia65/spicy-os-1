@@ -132,11 +132,11 @@ impl MemorySet {
         }
         for seg in self.segments.iter() {
             if range_overlap(&range, &seg.page_range()) {
-                riscv_sbi::println!("Overlap! {:?} and {:?}", &range, &seg.page_range());
+                // riscv_sbi::println!("Overlap! {:?} and {:?}", &range, &seg.page_range());
                 return true;
             }
         }
-        riscv_sbi::println!("No overlap! {:?}", &range);
+        // riscv_sbi::println!("No overlap! {:?}", &range);
         false
     }
 

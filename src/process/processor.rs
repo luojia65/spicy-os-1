@@ -81,21 +81,22 @@ impl Processor {
     pub fn prepare_next_thread(&mut self, context: &mut TrapFrame) -> *mut TrapFrame {
         // 向调度器询问下一个线程
         if let Some(next_thread) = self.scheduler.get_next() {
-            // if next_thread == self.current_thread() {
-            //     // 没有更换线程，直接返回 Context
-            //     context
-            // } else {
-            //     // 准备下一个线程
-            //     let next_context = next_thread.prepare();
-            //     let current_thread = self.current_thread.replace(next_thread).unwrap();
-            //     // 储存当前线程 Context
-            //     current_thread.park(context.clone());
-            //     // 返回下一个线程的 Context
-            //     next_context
-            // }
-            let context = next_thread.prepare();
-            self.current_thread = Some(next_thread);
-            return context;
+            if next_thread == self.current_thread() {
+                // 没有更换线程，直接返回 Context
+                context
+            } else {
+                // 准备下一个线程
+                let next_context = next_thread.prepare();
+                let current_thread = self.current_thread.replace(next_thread).unwrap();
+                // 储存当前线程 Context
+                current_thread.park(context.clone());
+                // 返回下一个线程的 Context
+                next_context
+            }
+            // let next_context = next_thread.prepare();
+            // let current_thread = self.current_thread.replace(next_thread).unwrap();
+            // current_thread.park(context.clone());
+            // next_context
         } else {
             panic!("all threads terminated, shutting down");
         }

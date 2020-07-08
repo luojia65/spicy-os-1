@@ -54,6 +54,7 @@ pub fn new_context(
     };
     // 设置栈顶指针
     context.sp = stack_top;
+    riscv_sbi::println!("SP: {:016x}", context.sp);
     context.ra = 0x23336666FA114514;
     // 设置初始参数
     if let Some(args) = arguments {
@@ -155,8 +156,16 @@ impl Thread {
         self.process.read().memory_set.activate();
         // 取出 Context
         let parked_frame = self.context.lock().take().unwrap();
-        // 将 Context 放至内核栈顶
-        unsafe { KERNEL_STACK.push_context(parked_frame) }
+        
+        if self.process.read().is_user {
+            // 用户线程则将 Context 放至内核栈顶
+            KERNEL_STACK.push_context(parked_frame)
+        } else {
+            // 内核线程则将 Context 放至 sp 下
+            let context = (parked_frame.sp - core::mem::size_of::<Context>()) as *mut Context;
+            unsafe { *context = parked_frame };
+            context
+        }
     }
 
     /// 发生时钟中断后暂停线程，保存状态

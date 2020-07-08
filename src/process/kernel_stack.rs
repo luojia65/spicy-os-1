@@ -16,11 +16,11 @@ impl KernelStack {
     pub fn push_context(&self, context: Context) -> *mut Context {
         // 栈顶
         let stack_top = &self.0 as *const _ as usize + size_of::<Self>();
-        riscv_sbi::println!("Top: {:p}", unsafe { stack_top as *mut () });
-        riscv_sbi::println!("Bottom: {:p}", &self.0 as *const _);
+        // riscv_sbi::println!("Top: {:p}", unsafe { stack_top as *mut () });
+        // riscv_sbi::println!("Bottom: {:p}", &self.0 as *const _);
         // Context 的位置
         let push_address = (stack_top - size_of::<Context>()) as *mut Context;
-        riscv_sbi::println!("Push addr: {:p}", unsafe { push_address as *mut () });
+        // riscv_sbi::println!("Push addr: {:p}", unsafe { push_address as *mut () });
         unsafe {
             *push_address = context;
         }

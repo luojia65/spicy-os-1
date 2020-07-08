@@ -120,7 +120,7 @@ fn main(hartid: usize, dtb_pa: usize) {
     let process = Process::new_kernel().unwrap();
 
     // start_user_thread("hello-world");
-    for message in 0..1 {
+    for message in 0..8 {
         let thread = Thread::new(
             process.clone(),            // 使用同一个进程
             sample_process as usize,    // 入口函数
