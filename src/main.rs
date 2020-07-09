@@ -215,12 +215,12 @@ pub fn handle_exception(
     scause: Scause,
     stval: usize,
 ) -> *mut TrapFrame {
-    println!(
-        "Exception occurred: {:?}; stval: 0x{:x}, sepc: 0x{:x}",
-        scause.cause(),
-        stval,
-        trap_frame.sepc
-    );
+    // println!(
+    //     "Exception occurred: {:?}; stval: 0x{:x}, sepc: 0x{:x}",
+    //     scause.cause(),
+    //     stval,
+    //     trap_frame.sepc
+    // );
     use riscv::register::scause::{Exception, Trap};
     if scause.cause() == Trap::Exception(Exception::Breakpoint) {
         println!("Breakpoint at 0x{:x}", trap_frame.sepc);
@@ -228,7 +228,7 @@ pub fn handle_exception(
     }
     if scause.cause() == Trap::Exception(Exception::UserEnvCall) {
         // println!("Syscall at 0x{:x}", trap_frame.sepc);
-        println!("{:x?}", trap_frame);
+        // println!("{:x?}", trap_frame);
         return kernel::syscall::syscall_handler(trap_frame);
     }
     trap_frame as *mut _
