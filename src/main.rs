@@ -110,6 +110,9 @@ fn main(hartid: usize, dtb_pa: usize) {
     println!("Instance created");
     remap.activate();
     println!("Page system activated");
+    // 允许内核读写用户态内存
+    // 别忘了这玩意
+    unsafe { riscv::register::sstatus::set_sum() };
 
     // unsafe {
     //     llvm_asm!("ebreak"::::"volatile");
