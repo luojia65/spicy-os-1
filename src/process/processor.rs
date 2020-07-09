@@ -4,8 +4,8 @@ use crate::process::Thread;
 use alloc::sync::Arc;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
-use riscv_sbi_rt::TrapFrame;
 use riscv_sbi::println;
+use riscv_sbi_rt::TrapFrame;
 
 mod unsafe_wrapper {
     use core::cell::UnsafeCell;

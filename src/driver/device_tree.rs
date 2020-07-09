@@ -13,7 +13,11 @@ fn walk(node: &Node) {
             super::virtio::virtio_probe(node);
         }
     }
-    println!("Name: {}; Compatible: {:?}", node.name, node.prop_str("compatible"));
+    println!(
+        "Name: {}; Compatible: {:?}",
+        node.name,
+        node.prop_str("compatible")
+    );
 
     // 遍历子树
     for child in node.children.iter() {

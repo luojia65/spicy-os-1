@@ -1,6 +1,6 @@
 use super::*;
-use lazy_static::lazy_static;
 use core::any::Any;
+use lazy_static::lazy_static;
 
 lazy_static! {
     pub static ref STDOUT: Arc<Stdout> = Default::default();

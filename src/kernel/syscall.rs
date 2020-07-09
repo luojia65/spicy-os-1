@@ -1,5 +1,5 @@
-use riscv_sbi_rt::TrapFrame as Context;
 use crate::PROCESSOR;
+use riscv_sbi_rt::TrapFrame as Context;
 
 const MODULE_PROCESS: usize = 0x23336666;
 const MODULE_FS: usize = 0xF0114514;
@@ -24,7 +24,7 @@ pub fn syscall_handler(context: &mut Context) -> *mut Context {
     let ans = match context.a0 {
         MODULE_PROCESS => super::process::module_process(context.a1, context.a2),
         MODULE_FS => super::fs::module_fs(context.a1, context.a2, context.a3, context.a4),
-        _ => unimplemented!()
+        _ => unimplemented!(),
     };
 
     match ans {
@@ -32,29 +32,29 @@ pub fn syscall_handler(context: &mut Context) -> *mut Context {
             // 将返回值放入 context 中
             context.a0 = ret as usize;
             context
-        },
+        }
         SyscallResult::ProceedTwo(ans, err) => {
             context.a0 = ans as usize;
             context.a1 = err as usize;
             context
-        },
+        }
         SyscallResult::Park(ret) => {
             // 将返回值放入 context 中
             context.a0 = ret as usize;
             // 保存 context，准备下一个线程
             PROCESSOR.get().park_current_thread(context);
             PROCESSOR.get().prepare_next_thread(context)
-        },
+        }
         SyscallResult::ParkTwo(ans, err) => {
             context.a0 = ans as usize;
             context.a1 = err as usize;
             PROCESSOR.get().park_current_thread(context);
             PROCESSOR.get().prepare_next_thread(context)
-        },
+        }
         SyscallResult::Kill => {
             // 终止，跳转到 PROCESSOR 调度的下一个线程
             PROCESSOR.get().kill_current_thread();
             PROCESSOR.get().prepare_next_thread(context)
-        },
+        }
     }
 }

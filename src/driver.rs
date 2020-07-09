@@ -2,8 +2,8 @@ use crate::mem::{PhysicalAddress, VirtualAddress};
 
 pub mod block;
 mod device_tree;
-mod virtio;
 mod ns16550a;
+mod virtio;
 
 use riscv_sbi::println;
 

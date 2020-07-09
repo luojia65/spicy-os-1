@@ -1,16 +1,16 @@
 use super::kernel_stack::KERNEL_STACK;
 use super::STACK_SIZE;
+use crate::fs::STDOUT;
 use crate::mem::{Flags, MemoryResult, VirtualAddress};
 use crate::process::Process;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use alloc::vec;
+use alloc::vec::Vec;
+use core::hash::{Hash, Hasher};
 use core::ops::Range;
+use rcore_fs::vfs::INode;
 use riscv::register::sstatus;
 use spin::{Mutex, RwLock};
-use core::hash::{Hash, Hasher};
-use rcore_fs::vfs::INode;
-use crate::fs::STDOUT;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct ThreadId(usize);
@@ -91,10 +91,10 @@ impl Thread {
             },
             stack,
             process,
-            inner: Mutex::new(ThreadInner { 
+            inner: Mutex::new(ThreadInner {
                 context: Some(context),
                 descriptors: vec![STDOUT.clone()],
-            })
+            }),
         });
 
         Ok(thread)
@@ -120,7 +120,7 @@ impl Thread {
         self.process.read().memory_set.activate();
         // 取出 Context
         let parked_frame = self.inner().context.take().unwrap();
-        
+
         if self.process.read().is_user {
             // 用户线程则将 Context 放至内核栈顶
             KERNEL_STACK.push_context(parked_frame)

@@ -105,9 +105,7 @@ mod fifo_scheduler {
         }
     }
 
-    impl<ThreadType: Clone + PartialEq> Scheduler<ThreadType>
-        for FifoScheduler<ThreadType>
-    {
+    impl<ThreadType: Clone + PartialEq> Scheduler<ThreadType> for FifoScheduler<ThreadType> {
         fn add_thread<T>(&mut self, thread: ThreadType, _priority: T) {
             // riscv_sbi::println!("[!] add thread! {:?}", thread);
             // 加入链表尾部

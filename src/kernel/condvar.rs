@@ -1,8 +1,8 @@
-use spin::Mutex;
-use alloc::collections::VecDeque;
-use alloc::sync::Arc;
 use crate::process::Thread;
 use crate::PROCESSOR;
+use alloc::collections::VecDeque;
+use alloc::sync::Arc;
+use spin::Mutex;
 
 #[derive(Default)]
 pub struct Condvar {

@@ -8,9 +8,9 @@
 mod algo;
 mod driver;
 mod fs;
+mod kernel;
 mod mem;
 mod process;
-mod kernel;
 
 use crate::process::{Process, Thread, PROCESSOR};
 use riscv::register::{scause::Scause, sie, sip, time};

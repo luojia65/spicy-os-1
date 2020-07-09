@@ -1,7 +1,7 @@
-use crate::PROCESSOR;
 use super::syscall::*;
-use rcore_fs::vfs::INode;
+use crate::PROCESSOR;
 use alloc::sync::Arc;
+use rcore_fs::vfs::INode;
 
 const FUNCTION_FS_READ: usize = 0x10002000;
 const FUNCTION_FS_WRITE: usize = 0x30004000;
@@ -10,7 +10,7 @@ pub fn module_fs(function: usize, param0: usize, param1: usize, param2: usize) -
     match function {
         FUNCTION_FS_READ => function_fs_read(param0, param1 as *const u8 as *mut _, param2),
         FUNCTION_FS_WRITE => function_fs_write(param0, param1 as *const u8, param2),
-        _ => unimplemented!()
+        _ => unimplemented!(),
     }
 }
 

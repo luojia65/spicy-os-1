@@ -57,7 +57,7 @@ impl Process {
     }
 
     /// 得到进程编号
-    pub fn process_id(&self) -> ProcessId { 
+    pub fn process_id(&self) -> ProcessId {
         self.id
     }
 
