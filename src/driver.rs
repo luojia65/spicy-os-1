@@ -1,7 +1,6 @@
 use crate::mem::{PhysicalAddress, VirtualAddress};
 
 pub mod block;
-pub mod serial;
 mod device_tree;
 mod ns16550a;
 mod virtio;

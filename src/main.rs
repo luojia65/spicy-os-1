@@ -131,7 +131,7 @@ fn main(hartid: usize, dtb_pa: usize) {
     //     ).unwrap();
     //     PROCESSOR.get().add_thread(thread);
     // }
-    start_user_thread("unicode-print");
+    start_user_thread("fibonacci");
     // for message in 5..8 {
     //     let thread = Thread::new(
     //         process.clone(),            // 使用同一个进程
