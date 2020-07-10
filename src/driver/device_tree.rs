@@ -9,8 +9,10 @@ const DEVICE_TREE_MAGIC: u32 = 0xd00d_feed;
 fn walk(node: &Node) {
     // 检查设备的协议支持并初始化
     if let Ok(compatible) = node.prop_str("compatible") {
-        if compatible == "virtio,mmio" {
-            super::virtio::virtio_probe(node);
+        match compatible {
+            "virtio,mmio" => super::virtio::virtio_probe(node),
+            "ns16550a" => super::ns16550a::ns16550a_probe(node),
+            _ => {}
         }
     }
     println!(
