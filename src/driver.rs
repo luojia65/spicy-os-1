@@ -17,6 +17,7 @@ pub fn init(dtb_pa: PhysicalAddress) {
 /// 驱动类型
 ///
 /// 目前只有块设备，可能还有网络、GPU 设备等
+// 未来做成类似于GUID的结构
 #[derive(Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum DeviceType {
@@ -27,6 +28,8 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use lazy_static::lazy_static;
 use spin::RwLock;
+
+// 这一块需要重新设计，可以用Any，支持包括自定义在内的大量设备类型
 
 /// 驱动的接口
 pub trait Driver: Send + Sync {

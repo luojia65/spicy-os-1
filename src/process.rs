@@ -20,6 +20,7 @@ use xmas_elf::ElfFile;
 pub struct ProcessId(pub u32);
 
 fn next_process_id() -> ProcessId {
+    // 这里应该用atomic
     static mut PROCESS_COUNTER: u32 = 0;
     let ans = unsafe { PROCESS_COUNTER };
     unsafe { PROCESS_COUNTER += 1 };
@@ -33,7 +34,7 @@ pub struct Process {
     pub is_user: bool,
     /// 进程中的线程公用页表 / 内存映射
     pub memory_set: MemorySet,
-    // id
+    /// 进程的编号
     id: ProcessId,
 }
 

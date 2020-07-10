@@ -32,6 +32,8 @@ unsafe fn pre_init() {
 
 extern crate alloc;
 
+// 启动一个核，其它的核等待软中断
+// 多核操作系统需要改这个函数
 #[export_name = "_mp_hook"]
 pub extern "C" fn mp_hook(hartid: usize, _dtb: usize) -> bool {
     if hartid == 0 {
@@ -72,7 +74,7 @@ fn main(hartid: usize, dtb_pa: usize) {
         }
         // wake other harts
         // let hart_mask: [usize; 4] = [1, 0, 0, 0];
-        let hart_mask = 0b1110; // todo
+        let hart_mask = 0b1110; // todo 这里需要重新设计API
         sbi::legacy::send_ipi(hart_mask);
     }
 
@@ -111,7 +113,8 @@ fn main(hartid: usize, dtb_pa: usize) {
     remap.activate();
     println!("Page system activated");
     // 允许内核读写用户态内存
-    // 别忘了这玩意
+    // 其实只需要在部分的syscall里打开就可以了
+    // 第一次写操作系统，别忘了这玩意，否则会有莫名其妙的页异常
     unsafe { riscv::register::sstatus::set_sum() };
 
     // unsafe {
