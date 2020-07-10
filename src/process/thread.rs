@@ -1,6 +1,6 @@
 use super::kernel_stack::KERNEL_STACK;
 use super::STACK_SIZE;
-use crate::fs::STDOUT;
+use crate::fs::{STDIN, STDOUT};
 use crate::mem::{Flags, MemoryResult, VirtualAddress};
 use crate::process::Process;
 use alloc::sync::Arc;
@@ -93,7 +93,7 @@ impl Thread {
             process,
             inner: Mutex::new(ThreadInner {
                 context: Some(context),
-                descriptors: vec![STDOUT.clone()],
+                descriptors: vec![STDIN.clone(), STDOUT.clone()],
             }),
         });
 

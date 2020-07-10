@@ -1,6 +1,8 @@
 mod inode_ext;
+mod stdin;
 mod stdout;
 pub use inode_ext::*;
+pub use stdin::*;
 pub use stdout::*;
 
 use crate::driver::{block::BlockDevice, DeviceType, DRIVERS};
