@@ -16,7 +16,10 @@ pub fn module_process(function: usize, param0: usize) -> SyscallResult {
 fn function_process_exit(code: usize) -> SyscallResult {
     let thread = PROCESSOR.get().current_thread();
     let process_id = thread.process().read().process_id();
-    println!("[Kernel] Process {:?} exited with code {}", process_id, code);
+    println!(
+        "[Kernel] Process {:?} exited with code {}",
+        process_id, code
+    );
     SyscallResult::Kill
 }
 

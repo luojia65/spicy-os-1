@@ -1,7 +1,7 @@
 #![allow(unused)]
 
-use volatile::Volatile;
 use device_tree::{util::SliceRead, Node};
+use volatile::Volatile;
 
 #[repr(C)]
 #[derive(Debug)]

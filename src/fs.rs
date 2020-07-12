@@ -42,7 +42,7 @@ pub fn ls(path: &str) {
         id += 1;
         print!("{} ", name);
     }
-    print!("\n");
+    println!("");
 }
 
 /// 触发 [`static@ROOT_INODE`] 的初始化并打印根目录内容
