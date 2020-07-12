@@ -28,7 +28,7 @@ mod hrrn_scheduler {
 
     /// 将线程和调度信息打包
     struct HrrnThread<ThreadType: Clone + PartialEq> {
-        /// 进入线程池时，[`current_time`] 中的时间
+        /// 进入线程池时，current_time中的时间
         birth_time: usize,
         /// 被分配时间片的次数
         service_count: usize,
