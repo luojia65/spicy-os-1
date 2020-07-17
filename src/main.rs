@@ -14,8 +14,8 @@ mod process;
 
 use crate::process::{Process, Thread, PROCESSOR};
 use riscv::register::{scause::Scause, sie, sip, time};
-use riscv_sbi::{self as sbi, println};
-use riscv_sbi_rt::{entry, interrupt, pre_init, TrapFrame};
+use riscv_sbi::{self as sbi, println, HartMask};
+use riscv_sbi_rt::{entry, interrupt, pre_init, TrapFrame, max_hart_id};
 
 use linked_list_allocator::LockedHeap;
 #[global_allocator]
@@ -81,7 +81,10 @@ fn main(hartid: usize, dtb_pa: usize) {
         }
         // wake other harts
         // let hart_mask: [usize; 4] = [1, 0, 0, 0];
-        let hart_mask = 0b1110; // todo 这里需要重新设计API
+        // let hart_mask = 0b1110; // todo 这里需要重新设计API
+        let mut hart_mask = HartMask::all(max_hart_id());
+        println!("max hart id: {}", max_hart_id());
+        hart_mask.clear(0); // unset hart 0
         sbi::legacy::send_ipi(hart_mask);
     }
 
