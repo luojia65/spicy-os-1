@@ -213,7 +213,10 @@ unsafe extern "C" fn supervisor_timer(context: &mut TrapFrame) -> *mut TrapFrame
 
 #[export_name = "ExceptionHandler"]
 pub fn handle_exception(trap_frame: &mut TrapFrame) -> *mut TrapFrame {
-    use riscv::register::{stval, scause::{self, Exception, Trap}};
+    use riscv::register::{
+        scause::{self, Exception, Trap},
+        stval,
+    };
     let scause = scause::read();
     let stval = stval::read();
     // println!(
