@@ -199,11 +199,7 @@ const INTERVAL: u64 = 100000;
 // fn SupervisorTimer() {
 
 #[export_name = "SupervisorTimer"]
-unsafe extern "C" fn supervisor_timer(
-    context: &mut TrapFrame,
-    _scause: Scause,
-    _stval: usize,
-) -> *mut TrapFrame {
+unsafe extern "C" fn supervisor_timer(context: &mut TrapFrame) -> *mut TrapFrame {
     static mut TICKS: usize = 0;
 
     sbi::legacy::set_timer(time::read64().wrapping_add(INTERVAL));
@@ -216,18 +212,16 @@ unsafe extern "C" fn supervisor_timer(
 }
 
 #[export_name = "ExceptionHandler"]
-pub fn handle_exception(
-    trap_frame: &mut TrapFrame,
-    scause: Scause,
-    stval: usize,
-) -> *mut TrapFrame {
+pub fn handle_exception(trap_frame: &mut TrapFrame) -> *mut TrapFrame {
+    use riscv::register::{stval, scause::{self, Exception, Trap}};
+    let scause = scause::read();
+    let stval = stval::read();
     // println!(
     //     "Exception occurred: {:?}; stval: 0x{:x}, sepc: 0x{:x}",
     //     scause.cause(),
     //     stval,
     //     trap_frame.sepc
     // );
-    use riscv::register::scause::{Exception, Trap};
     if scause.cause() == Trap::Exception(Exception::Breakpoint) {
         println!("Breakpoint at 0x{:x}", trap_frame.sepc);
         trap_frame.sepc += 2;
