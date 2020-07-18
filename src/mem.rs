@@ -6,18 +6,17 @@ use lazy_static::lazy_static;
 // we should auto detect them other than hardcode it into linker script.
 
 extern "Rust" {
-    static _sframe: u8;
-    static _eframe: u8;
+    static _sstack: u8;
 }
 
 pub use self::address::*;
 lazy_static! {
     /// 可以访问的内存区域起始地址
     pub static ref MEMORY_START_ADDRESS: PhysicalAddress =
-        PhysicalAddress(unsafe { &_sframe as *const _ as usize } - KERNEL_MAP_OFFSET);
+        PhysicalAddress(unsafe { &_sstack as *const _ as usize } - KERNEL_MAP_OFFSET);
     /// 可以访问的内存区域结束地址
     pub static ref MEMORY_END_ADDRESS: PhysicalAddress =
-        PhysicalAddress(unsafe { &_eframe as *const _ as usize } - KERNEL_MAP_OFFSET);
+        PhysicalAddress(0x8800_0000);
 }
 pub use self::memory_set::MemorySet;
 

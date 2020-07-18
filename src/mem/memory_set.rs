@@ -40,10 +40,10 @@ impl MemorySet {
             fn _edata();
             fn _sbss();
             fn _ebss();
+            fn _sheap();
+            fn _eheap();
             fn _estack();
             fn _sstack();
-            fn _sframe();
-            fn _eframe();
         }
 
         // 建立字段
@@ -78,16 +78,22 @@ impl MemorySet {
                 range: (_sbss as usize).into()..(_ebss as usize).into(),
                 flags: Flags::READABLE | Flags::WRITABLE,
             },
-            // frame, rw-
+            // .heap 段, rw-
             Segment {
                 map_type: MapType::Linear,
-                range: (_sframe as usize).into()..(_eframe as usize).into(),
+                range: (_sheap as usize).into()..(_eheap as usize).into(),
                 flags: Flags::READABLE | Flags::WRITABLE,
             },
-            // stack，rw-
+            // .stack 段，rw-
             Segment {
                 map_type: MapType::Linear,
                 range: (_estack as usize).into()..(_sstack as usize).into(),
+                flags: Flags::READABLE | Flags::WRITABLE,
+            },
+            // 剩下的部分，rw-
+            Segment {
+                map_type: MapType::Linear,
+                range: (_sstack as usize).into()..PhysicalAddress(0x8800_0000).into(),
                 flags: Flags::READABLE | Flags::WRITABLE,
             },
         ];

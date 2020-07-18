@@ -15,15 +15,13 @@ mod process;
 use crate::process::{Process, Thread, PROCESSOR};
 use riscv::register::{scause::Scause, sie, sip, time};
 use riscv_sbi::{self as sbi, println, HartMask};
-use riscv_sbi_rt::{entry, interrupt, pre_init, TrapFrame, max_hart_id};
+use riscv_sbi_rt::{entry, heap_start, interrupt, max_hart_id, pre_init, TrapFrame};
 
 use linked_list_allocator::LockedHeap;
 #[global_allocator]
 static HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
 
-const HEAP_SIZE: usize = 0x100_0000;
-
-static mut HEAP: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
+const HEAP_SIZE: usize = 0x100_0000; // 16MiB
 
 #[cfg(target_pointer_width = "64")]
 riscv_sbi_rt::boot_page_sv39! {
@@ -75,15 +73,10 @@ fn main(hartid: usize, dtb_pa: usize) {
 
     if hartid == 0 {
         unsafe {
-            HEAP_ALLOCATOR
-                .lock()
-                .init(HEAP.as_ptr() as usize, HEAP_SIZE);
+            HEAP_ALLOCATOR.lock().init(heap_start() as usize, HEAP_SIZE);
         }
         // wake other harts
-        // let hart_mask: [usize; 4] = [1, 0, 0, 0];
-        // let hart_mask = 0b1110; // todo 这里需要重新设计API
         let mut hart_mask = HartMask::all(max_hart_id());
-        println!("max hart id: {}", max_hart_id());
         hart_mask.clear(0); // unset hart 0
         sbi::legacy::send_ipi(hart_mask);
     }
@@ -101,8 +94,8 @@ fn main(hartid: usize, dtb_pa: usize) {
     }
     println!("heap test passed");
 
-    println!("frame start: {:?}", *mem::MEMORY_START_ADDRESS);
-    println!("frame end: {:?}", *mem::MEMORY_END_ADDRESS);
+    println!("frame start: {:016x?}", *mem::MEMORY_START_ADDRESS);
+    println!("frame end: {:016x?}", *mem::MEMORY_END_ADDRESS);
 
     // 物理页分配
     for _ in 0..2 {
